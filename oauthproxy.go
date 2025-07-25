@@ -230,7 +230,7 @@ func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthPr
 		logger.Printf("Email-domain discovery enabled with methods: %v", opts.EmailDiscovery.Methods)
 		
 		// Convert options to discovery config
-		discoveryConfig := opts.EmailDiscovery.ToDiscoveryConfig()
+		discoveryConfig := opts.EmailDiscovery.ToDiscoveryConfig(opts.EmailDomainProviders)
 		
 		// Create provider factory with fallback info
 		var fallbackInfo *discovery.ExtendedProviderInfo

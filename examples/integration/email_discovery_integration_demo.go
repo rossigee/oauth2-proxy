@@ -22,35 +22,37 @@ func main() {
 		Methods:          []string{"config", "dns", "wellknown"},
 		DNSEnabled:       true,
 		WellKnownEnabled: true,
-		DomainProviders: []options.DomainProviderMapping{
-			{
-				Domain:       "test.com",
-				IssuerURL:    "https://auth.test.com",
-				ProviderType: "oidc",
-				ClientID:     "test-client",
-				ClientSecret: "test-secret",
-			},
-			{
-				Domain:       "gmail.com",
-				IssuerURL:    "https://accounts.google.com",
-				ProviderType: "google",
-				ClientID:     "gmail-client",
-				ClientSecret: "gmail-secret",
-			},
-		},
 		FallbackProvider: "default",
 		FallbackURL:      "/oauth2/sign_in",
 	}
 
+	// Create domain providers separately (as they're now in main options)
+	domainProviders := []options.DomainProviderMapping{
+		{
+			Domain:       "test.com",
+			IssuerURL:    "https://auth.test.com",
+			ProviderType: "oidc",
+			ClientID:     "test-client",
+			ClientSecret: "test-secret",
+		},
+		{
+			Domain:       "gmail.com",
+			IssuerURL:    "https://accounts.google.com",
+			ProviderType: "google",
+			ClientID:     "gmail-client",
+			ClientSecret: "gmail-secret",
+		},
+	}
+
 	// Validate configuration
-	if msgs := emailOpts.Validate(); len(msgs) > 0 {
+	if msgs := emailOpts.Validate(domainProviders); len(msgs) > 0 {
 		log.Fatalf("Email discovery options validation failed: %v", msgs)
 	}
 	fmt.Println("✅ EmailDiscoveryOptions created and validated successfully")
 
 	// Test 2: Convert to discovery config
 	fmt.Println("\nTest 2: Converting to DiscoveryConfig...")
-	discoveryConfig := emailOpts.ToDiscoveryConfig()
+	discoveryConfig := emailOpts.ToDiscoveryConfig(domainProviders)
 	fmt.Printf("✅ Converted to DiscoveryConfig with %d methods and %d domain mappings\n", 
 		len(discoveryConfig.Methods), len(discoveryConfig.DomainMaps))
 
@@ -136,6 +138,7 @@ func main() {
 	fmt.Println("\nTest 7: Testing integration with Options system...")
 	opts := options.NewOptions()
 	opts.EmailDiscovery = emailOpts
+	opts.EmailDomainProviders = domainProviders
 	
 	if !opts.EmailDiscovery.Enabled {
 		log.Fatalf("EmailDiscovery should be enabled in options")
@@ -144,7 +147,7 @@ func main() {
 	fmt.Printf("✅ EmailDiscovery successfully integrated into Options struct\n")
 	fmt.Printf("   Enabled: %t\n", opts.EmailDiscovery.Enabled)
 	fmt.Printf("   Methods: %v\n", opts.EmailDiscovery.Methods)
-	fmt.Printf("   Domain Providers: %d\n", len(opts.EmailDiscovery.DomainProviders))
+	fmt.Printf("   Domain Providers: %d\n", len(opts.EmailDomainProviders))
 
 	fmt.Println("\n🎉 All integration tests passed!")
 	fmt.Println("\nEmail discovery is successfully integrated into oauth2-proxy!")

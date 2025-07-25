@@ -16,9 +16,6 @@ type EmailDiscoveryOptions struct {
 	// Enable HTTP well-known discovery
 	WellKnownEnabled bool `flag:"wellknown-discovery" cfg:"wellknown_discovery" env:"OAUTH2_PROXY_WELLKNOWN_DISCOVERY"`
 	
-	// Domain to provider mappings
-	DomainProviders []DomainProviderMapping `cfg:"domain_providers"`
-	
 	// Fallback provider ID when discovery fails
 	FallbackProvider string `flag:"fallback-provider" cfg:"fallback_provider" env:"OAUTH2_PROXY_FALLBACK_PROVIDER"`
 	
@@ -36,7 +33,7 @@ type DomainProviderMapping struct {
 }
 
 // ToDiscoveryConfig converts EmailDiscoveryOptions to discovery.DiscoveryConfig
-func (e *EmailDiscoveryOptions) ToDiscoveryConfig() discovery.DiscoveryConfig {
+func (e *EmailDiscoveryOptions) ToDiscoveryConfig(domainProviders []DomainProviderMapping) discovery.DiscoveryConfig {
 	// Convert method strings to DiscoveryMethod types
 	methods := make([]discovery.DiscoveryMethod, 0, len(e.Methods))
 	for _, method := range e.Methods {
@@ -51,8 +48,8 @@ func (e *EmailDiscoveryOptions) ToDiscoveryConfig() discovery.DiscoveryConfig {
 	}
 	
 	// Convert domain mappings
-	domainMaps := make([]discovery.DomainProviderConfig, 0, len(e.DomainProviders))
-	for _, mapping := range e.DomainProviders {
+	domainMaps := make([]discovery.DomainProviderConfig, 0, len(domainProviders))
+	for _, mapping := range domainProviders {
 		domainMaps = append(domainMaps, discovery.DomainProviderConfig{
 			Domain:       mapping.Domain,
 			IssuerURL:    mapping.IssuerURL,
@@ -77,14 +74,13 @@ func GetDefaultEmailDiscoveryOptions() EmailDiscoveryOptions {
 		Methods:          []string{"config", "dns", "wellknown"},
 		DNSEnabled:       true,
 		WellKnownEnabled: true,
-		DomainProviders:  []DomainProviderMapping{},
 		FallbackProvider: "",
 		FallbackURL:      "/oauth2/sign_in", // Default fallback to standard sign-in
 	}
 }
 
 // Validate validates the email discovery configuration
-func (e *EmailDiscoveryOptions) Validate() []string {
+func (e *EmailDiscoveryOptions) Validate(domainProviders []DomainProviderMapping) []string {
 	var msgs []string
 	
 	if !e.Enabled {
@@ -106,7 +102,7 @@ func (e *EmailDiscoveryOptions) Validate() []string {
 	
 	// Validate domain mappings
 	domainsSeen := make(map[string]bool)
-	for _, mapping := range e.DomainProviders {
+	for _, mapping := range domainProviders {
 		if mapping.Domain == "" {
 			msgs = append(msgs, "domain_providers: domain is required")
 			continue
