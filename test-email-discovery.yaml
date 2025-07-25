@@ -1,0 +1,29 @@
+# Test configuration for email discovery
+email_domain_routing: true
+discovery_methods: ["config"]
+dns_discovery: false
+wellknown_discovery: false
+fallback_url: "/oauth2/sign_in"
+
+domain_providers:
+  - domain: "test.com"
+    issuer_url: "https://auth.test.com"
+    type: "oidc"
+    client_id: "test-client"
+    client_secret: "test-secret"
+  - domain: "gmail.com"
+    issuer_url: "https://accounts.google.com"
+    type: "google"
+    client_id: "gmail-client"
+    client_secret: "gmail-secret"
+
+# Basic OAuth2 proxy configuration
+providers:
+  - id: "default"
+    client_id: "default-client"
+    client_secret: "default-secret"
+    oidc_issuer_url: "https://default.example.com"
+
+proxy_prefix: "/oauth2"
+redirect_url: "https://localhost:4180/oauth2/callback"
+cookie_secret: "test-cookie-secret-12345678901234567890123456789012"
