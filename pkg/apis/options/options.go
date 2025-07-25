@@ -51,6 +51,9 @@ type Options struct {
 	MetricsServer Server `cfg:",internal"`
 
 	Providers Providers `cfg:",internal"`
+	
+	// Email-domain based provider discovery
+	EmailDiscovery EmailDiscoveryOptions `cfg:",squash"`
 
 	APIRoutes                []string `flag:"api-route" cfg:"api_routes"`
 	SkipAuthRegex            []string `flag:"skip-auth-regex" cfg:"skip_auth_regex"`
@@ -110,6 +113,7 @@ func NewOptions() *Options {
 		Templates:                templatesDefaults(),
 		SkipAuthPreflight:        false,
 		Logging:                  loggingDefaults(),
+		EmailDiscovery:           GetDefaultEmailDiscoveryOptions(),
 	}
 }
 
@@ -161,6 +165,14 @@ func NewFlagSet() *pflag.FlagSet {
 	flagSet.Int("redis-connection-idle-timeout", 0, "Redis connection idle timeout seconds, if Redis timeout option is non-zero, the --redis-connection-idle-timeout must be less then Redis timeout option")
 	flagSet.String("signature-key", "", "GAP-Signature request signature key (algorithm:secretkey)")
 	flagSet.Bool("gcp-healthchecks", false, "Enable GCP/GKE healthcheck endpoints")
+
+	// Email-domain discovery flags
+	flagSet.Bool("email-domain-routing", false, "enable email-domain based provider discovery")
+	flagSet.StringSlice("discovery-method", []string{"config", "dns", "wellknown"}, "discovery methods to use in priority order (config, dns, wellknown)")
+	flagSet.Bool("dns-discovery", true, "enable DNS TXT record discovery for OIDC providers")
+	flagSet.Bool("wellknown-discovery", true, "enable HTTP well-known discovery for OIDC providers")
+	flagSet.String("fallback-provider", "", "fallback provider ID when email discovery fails")
+	flagSet.String("fallback-url", "/oauth2/sign_in", "URL to redirect to for fallback authentication")
 
 	flagSet.AddFlagSet(cookieFlagSet())
 	flagSet.AddFlagSet(loggingFlagSet())

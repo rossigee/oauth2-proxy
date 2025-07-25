@@ -28,6 +28,8 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/authentication/basic"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/cookies"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/encryption"
+	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/handlers"
+	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/proxyhttp"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/util"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/version"
@@ -53,6 +55,7 @@ const (
 	oauthCallbackPath = "/callback"
 	authOnlyPath      = "/auth"
 	userInfoPath      = "/userinfo"
+	emailLoginPath    = "/email-login"
 	staticPathPrefix  = "/static/"
 )
 
@@ -112,6 +115,10 @@ type OAuthProxy struct {
 	serveMux          *mux.Router
 	redirectValidator redirect.Validator
 	appDirector       redirect.AppDirector
+
+	// Email discovery components
+	emailDiscoveryEnabled bool
+	emailLoginHandler     *handlers.EmailLoginHandler
 
 	encodeState bool
 }
@@ -216,6 +223,55 @@ func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthPr
 		Validator:   redirectValidator,
 	})
 
+	// Initialize email discovery components if enabled
+	var emailLoginHandler *handlers.EmailLoginHandler
+	emailDiscoveryEnabled := opts.EmailDiscovery.Enabled
+	if emailDiscoveryEnabled {
+		logger.Printf("Email-domain discovery enabled with methods: %v", opts.EmailDiscovery.Methods)
+
+		// Convert options to discovery config
+		discoveryConfig := opts.EmailDiscovery.ToDiscoveryConfig()
+
+		// Create provider factory with fallback info
+		var fallbackInfo *discovery.ExtendedProviderInfo
+		if opts.EmailDiscovery.FallbackProvider != "" {
+			// For now, use a simple fallback - in production this would reference an existing provider
+			fallbackInfo = &discovery.ExtendedProviderInfo{
+				ProviderInfo: &discovery.ProviderInfo{
+					IssuerURL:    redirectURL.String(), // Use current redirect as fallback
+					ProviderType: "oidc",
+					ClientID:     opts.Providers[0].ClientID,
+				},
+				ClientSecret: opts.Providers[0].ClientSecret,
+			}
+		}
+
+		providerFactory := discovery.NewProviderFactory(discoveryConfig, fallbackInfo)
+
+		// Load email login template
+		templateContent := staticFiles
+		var emailTemplate string
+		if data, err := templateContent.ReadFile("static/email_login.html"); err != nil {
+			logger.Errorf("Failed to load email login template: %v", err)
+			emailTemplate = "<html><body><form method='post'><input type='email' name='email' required><button type='submit'>Continue</button></form></body></html>"
+		} else {
+			emailTemplate = string(data)
+		}
+
+		// Create email login handler
+		emailLoginHandler, err = handlers.NewEmailLoginHandler(
+			providerFactory,
+			emailTemplate,
+			redirectURL,
+			opts.EmailDiscovery.FallbackURL,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error initialising email login handler: %v", err)
+		}
+
+		logger.Printf("Email login handler initialized with fallback URL: %s", opts.EmailDiscovery.FallbackURL)
+	}
+
 	p := &OAuthProxy{
 		CookieOptions: &opts.Cookie,
 		Validator:     validator,
@@ -247,7 +303,12 @@ func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthPr
 		upstreamProxy:      upstreamProxy,
 		redirectValidator:  redirectValidator,
 		appDirector:        appDirector,
-		encodeState:        opts.EncodeState,
+
+		// Email discovery
+		emailDiscoveryEnabled: emailDiscoveryEnabled,
+		emailLoginHandler:     emailLoginHandler,
+
+		encodeState: opts.EncodeState,
 	}
 	p.buildServeMux(opts.ProxyPrefix)
 
@@ -341,6 +402,11 @@ func (p *OAuthProxy) buildProxySubrouter(s *mux.Router) {
 	s.Path(signInPath).HandlerFunc(p.SignIn)
 	s.Path(oauthStartPath).HandlerFunc(p.OAuthStart)
 	s.Path(oauthCallbackPath).HandlerFunc(p.OAuthCallback)
+
+	// Email discovery login handler (if enabled)
+	if p.emailDiscoveryEnabled && p.emailLoginHandler != nil {
+		s.Path(emailLoginPath).Handler(p.emailLoginHandler)
+	}
 
 	// Static file paths
 	s.PathPrefix(staticPathPrefix).Handler(http.StripPrefix(p.ProxyPrefix, http.FileServer(http.FS(staticFiles))))
