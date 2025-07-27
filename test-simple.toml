@@ -1,0 +1,16 @@
+# Simple test configuration for email discovery
+email_domain_routing = true
+dns_discovery = true
+wellknown_discovery = true
+fallback_url = "/oauth2/sign_in"
+
+# Basic oauth2-proxy configuration
+upstreams = ["http://localhost:8080"]
+cookie_secret = "test-cookie-secret-32-chars-long"
+email_domains = ["*"]
+
+# Default provider
+provider = "oidc" 
+client_id = "default-client-id"
+client_secret = "default-client-secret"
+oidc_issuer_url = "https://default.example.com"

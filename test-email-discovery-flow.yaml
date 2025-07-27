@@ -1,0 +1,31 @@
+# Test configuration for email discovery flow
+email_domain_routing: true
+discovery_methods: ["config", "dns", "wellknown"]
+dns_discovery: true
+wellknown_discovery: true
+fallback_url: "/oauth2/sign_in"
+
+# Test domain providers
+domain_providers:
+  - domain: "test.com"
+    issuer_url: "https://auth.test.com"
+    type: "oidc"
+    client_id: "test-client-id"
+    client_secret: "test-client-secret"
+  - domain: "google.com"
+    issuer_url: "https://accounts.google.com"
+    type: "google"
+    client_id: "google-client-id"
+    client_secret: "google-client-secret"
+
+# Basic oauth2-proxy configuration
+upstreams:
+  - "http://localhost:8080"
+
+cookie_secret: "test-cookie-secret-32-chars-long!"
+
+providers:
+  - provider: "oidc"
+    client_id: "default-client-id"
+    client_secret: "default-client-secret"
+    oidc_issuer_url: "https://default.example.com"
