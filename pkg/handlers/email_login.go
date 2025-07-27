@@ -100,16 +100,22 @@ func (h *EmailLoginHandler) handlePostEmailForm(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// For now, just return success with the discovered provider info
-	// In a full implementation, this would redirect to the actual provider
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	
-	// Simple JSON response for now
-	w.Write([]byte(`{"success": true, "message": "Provider discovered successfully"}`))
-	
 	logger.Printf("Successfully discovered provider for email %s: %s (%s)", 
 		email, providerInfo.IssuerURL, providerInfo.ProviderType)
+
+	// Redirect to OAuth start with email parameter for dynamic provider selection
+	oauthStartURL := "/oauth2/start"
+	params := url.Values{}
+	params.Set("email", email)
+	
+	// Preserve any existing redirect URL
+	if rd := r.URL.Query().Get("rd"); rd != "" {
+		params.Set("rd", rd)
+	}
+	
+	redirectURL := oauthStartURL + "?" + params.Encode()
+	logger.Printf("Redirecting to OAuth start with email parameter: %s", redirectURL)
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 // redirectWithError redirects back to the email form with an error message

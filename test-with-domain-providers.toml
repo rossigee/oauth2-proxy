@@ -1,0 +1,37 @@
+# Test configuration with domain provider mappings
+email_domain_routing = true
+dns_discovery = true
+wellknown_discovery = true
+fallback_url = "/oauth2/sign_in"
+
+# Basic oauth2-proxy configuration  
+upstreams = ["http://localhost:8080"]
+cookie_secret = "test-cookie-secret-32-chars-long"
+email_domains = ["*"]
+
+# Use Google as default provider
+provider = "google"
+client_id = "default-client-id"
+client_secret = "default-client-secret"
+
+# Domain provider mappings
+[[domain_providers]]
+domain = "test.com"
+issuer_url = "https://auth.test.com"
+type = "oidc"
+client_id = "test-client-id"
+client_secret = "test-client-secret"
+
+[[domain_providers]]
+domain = "google.com"
+issuer_url = "https://accounts.google.com"
+type = "google"
+client_id = "google-client-id"
+client_secret = "google-client-secret"
+
+[[domain_providers]]
+domain = "github.com"
+issuer_url = "https://github.com/login/oauth"
+type = "github"
+client_id = "github-client-id"
+client_secret = "github-client-secret"

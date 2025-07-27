@@ -55,8 +55,8 @@ type Options struct {
 	// Email-domain based provider discovery
 	EmailDiscovery EmailDiscoveryOptions `cfg:",squash"`
 	
-	// Domain provider mappings (complex config only)
-	EmailDomainProviders []DomainProviderMapping `cfg:"domain_providers,internal"`
+	// Domain provider mappings (config file only - complex configuration not suitable for command line)
+	EmailDomainProviders []DomainProviderMapping `cfg:",internal"`
 
 	APIRoutes                []string `flag:"api-route" cfg:"api_routes"`
 	SkipAuthRegex            []string `flag:"skip-auth-regex" cfg:"skip_auth_regex"`

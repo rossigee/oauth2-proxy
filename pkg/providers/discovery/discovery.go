@@ -25,6 +25,7 @@ type UnifiedDiscovery struct {
 	dns       *DNSDiscovery
 	config    *ConfigDiscovery
 	wellKnown *WellKnownDiscovery
+	metrics   *Metrics
 }
 
 // DiscoveryConfig represents configuration for the unified discovery system
@@ -39,6 +40,7 @@ type DiscoveryConfig struct {
 func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
 	discovery := &UnifiedDiscovery{
 		methods: config.Methods,
+		metrics: GetMetrics(),
 	}
 	
 	// Initialize discovery methods based on configuration
@@ -67,58 +69,158 @@ func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
 		discovery.wellKnown = NewWellKnownDiscovery()
 	}
 	
+	// Initialize metrics for each method
+	for _, method := range discovery.methods {
+		discovery.metrics.MethodUsage(string(method), "initialization")
+	}
+	
 	return discovery
 }
 
 // DiscoverProvider attempts to discover provider information using configured methods in priority order
 func (u *UnifiedDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error) {
+	// Start overall discovery timer
+	timer := u.metrics.StartTimer()
+	
+	// Track discovery request
+	u.metrics.DiscoveryRequest("unified", domain)
+	
 	var lastErr error
+	var attemptedMethods []string
 	
 	for _, method := range u.methods {
+		methodStr := string(method)
+		attemptedMethods = append(attemptedMethods, methodStr)
+		
 		var discoverer Discoverer
+		var fallbackReason string
 		
 		switch method {
 		case MethodDNS:
 			if u.dns != nil {
 				discoverer = u.dns
+			} else {
+				fallbackReason = "dns_disabled"
 			}
 		case MethodConfig:
 			if u.config != nil {
 				discoverer = u.config
+			} else {
+				fallbackReason = "config_disabled"
 			}
 		case MethodWellKnown:
 			if u.wellKnown != nil {
 				discoverer = u.wellKnown
+			} else {
+				fallbackReason = "wellknown_disabled"
 			}
 		}
 		
 		if discoverer == nil {
+			u.metrics.MethodUsage(methodStr, fallbackReason)
 			continue
 		}
 		
+		// Start method-specific timer
+		methodTimer := u.metrics.StartTimer()
+		u.metrics.DiscoveryRequest(methodStr, domain)
+		
 		info, err := discoverer.DiscoverProvider(domain)
 		if err == nil && info != nil {
+			// Success metrics
+			methodTimer.ObserveDiscovery(methodStr, domain, info.ProviderType, true, "")
+			timer.ObserveDiscovery("unified", domain, info.ProviderType, true, "")
+			
+			u.metrics.MethodUsage(methodStr, "success")
 			log.Printf("Successfully discovered provider for domain %s using method %s", domain, method)
 			return info, nil
 		}
 		
-		lastErr = err
+		// Error metrics
+		errorType := "unknown"
+		if err != nil {
+			errorType = classifyError(err)
+			lastErr = err
+		}
+		
+		methodTimer.ObserveDiscovery(methodStr, domain, "", false, errorType)
+		u.metrics.MethodUsage(methodStr, "fallback_"+errorType)
+		
 		log.Printf("Discovery method %s failed for domain %s: %v", method, domain, err)
 	}
 	
+	// All methods failed
+	finalErrorType := "all_methods_failed"
 	if lastErr != nil {
+		finalErrorType = classifyError(lastErr)
+		timer.ObserveDiscovery("unified", domain, "", false, finalErrorType)
 		return nil, fmt.Errorf("all discovery methods failed for domain %s, last error: %v", domain, lastErr)
 	}
 	
+	// No methods configured
+	timer.ObserveDiscovery("unified", domain, "", false, "no_methods_configured")
 	return nil, fmt.Errorf("no discovery methods configured for domain %s", domain)
+}
+
+// classifyError categorizes errors for metrics tracking
+func classifyError(err error) string {
+	if err == nil {
+		return "none"
+	}
+	
+	errStr := err.Error()
+	switch {
+	case contains(errStr, "timeout"):
+		return "timeout"
+	case contains(errStr, "dns"):
+		return "dns_error"
+	case contains(errStr, "network"):
+		return "network_error"
+	case contains(errStr, "invalid"):
+		return "validation_error"
+	case contains(errStr, "not found"):
+		return "not_found"
+	case contains(errStr, "forbidden"):
+		return "forbidden"
+	case contains(errStr, "rate limit"):
+		return "rate_limited"
+	default:
+		return "unknown"
+	}
+}
+
+// contains is a simple string contains helper
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && 
+		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
+		 indexOfSubstring(s, substr) >= 0)))
+}
+
+func indexOfSubstring(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
 }
 
 // DiscoverProviderFromEmail extracts the domain from an email and discovers the provider
 func (u *UnifiedDiscovery) DiscoverProviderFromEmail(email string) (*ProviderInfo, error) {
+	// Validate email format and track validation metrics
+	if err := ValidateEmail(email); err != nil {
+		u.metrics.ValidationError("email_format", err.Error())
+		return nil, fmt.Errorf("email validation failed: %v", err)
+	}
+	
 	domain, err := ExtractDomainFromEmail(email)
 	if err != nil {
+		u.metrics.ValidationError("domain_extraction", err.Error())
 		return nil, fmt.Errorf("failed to extract domain from email %s: %v", email, err)
 	}
+	
+	// Track the email-to-provider request
+	u.metrics.DiscoveryRequest("email_discovery", domain)
 	
 	return u.DiscoverProvider(domain)
 }
