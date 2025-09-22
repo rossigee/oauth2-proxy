@@ -12,7 +12,7 @@ import (
 func TestEnhancedRateLimiterBasicLimits(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 100, // High enough not to interfere with specific tests
 		DomainPerMinute: 100, // High enough for IP testing
@@ -20,8 +20,8 @@ func TestEnhancedRateLimiterBasicLimits(t *testing.T) {
 		UserPerMinute:   5,
 		GlobalBurst:     100,
 		DomainBurst:     10, // High enough for IP testing
-		IPBurst:        2,
-		UserBurst:      2,
+		IPBurst:         2,
+		UserBurst:       2,
 		CleanupInterval: time.Hour, // Disable cleanup for testing
 		LimiterTTL:      time.Hour,
 	}
@@ -59,7 +59,7 @@ func TestEnhancedRateLimiterBasicLimits(t *testing.T) {
 		// But should allow requests from a different IP
 		req.IPAddress = "10.0.0.2"
 		req.Domain = "another-unique-ip-test.com" // Also change domain to avoid domain limit
-		req.UserID = "different-user" // Also change user to avoid user limit
+		req.UserID = "different-user"             // Also change user to avoid user limit
 		result = rl.CheckRateLimit(req)
 		if !result.Allowed {
 			t.Logf("Different IP rejection reason: %s", result.Reason)
@@ -71,16 +71,16 @@ func TestEnhancedRateLimiterBasicLimits(t *testing.T) {
 func TestEnhancedRateLimiterDomainLimits(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 100, // High enough not to interfere
 		DomainPerMinute: 100, // High per minute rate
 		IPPerMinute:     100,
 		UserPerMinute:   100,
 		GlobalBurst:     100,
-		DomainBurst:     1,   // Low burst to test domain limiting
-		IPBurst:        10,
-		UserBurst:      10,
+		DomainBurst:     1, // Low burst to test domain limiting
+		IPBurst:         10,
+		UserBurst:       10,
 		CleanupInterval: time.Hour,
 		LimiterTTL:      time.Hour,
 	}
@@ -117,7 +117,7 @@ func TestEnhancedRateLimiterDomainLimits(t *testing.T) {
 func TestEnhancedRateLimiterGlobalLimits(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 1000, // Very high rate
 		GlobalBurst:     2,    // But low burst
@@ -155,7 +155,7 @@ func TestEnhancedRateLimiterGlobalLimits(t *testing.T) {
 func TestEnhancedRateLimiterPriority(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond:   1,
 		GlobalBurst:       2,
@@ -202,7 +202,7 @@ func TestEnhancedRateLimiterPriority(t *testing.T) {
 func TestEnhancedRateLimiterExponentialBackoff(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond:          10, // High enough to not interfere
 		DomainPerMinute:          1,  // Very restrictive
@@ -253,7 +253,7 @@ func TestEnhancedRateLimiterExponentialBackoff(t *testing.T) {
 func TestEnhancedRateLimiterCleanup(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 10,
 		DomainPerMinute: 10,
@@ -353,11 +353,11 @@ func TestRateLimitRequestPriority(t *testing.T) {
 func TestEnhancedRateLimiterUserLimits(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 100, // High enough to not interfere
 		UserPerMinute:   2,
-		UserBurst:      1,
+		UserBurst:       1,
 		CleanupInterval: time.Hour,
 		LimiterTTL:      time.Hour,
 	}
@@ -392,12 +392,12 @@ func TestEnhancedRateLimiterUserLimits(t *testing.T) {
 func TestEnhancedRateLimiterBackoffCalculation(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		EnableExponentialBackoff: true,
-		InitialBackoff:          100 * time.Millisecond,
-		MaxBackoff:              1 * time.Second,
-		BackoffMultiplier:       2.0,
+		InitialBackoff:           100 * time.Millisecond,
+		MaxBackoff:               1 * time.Second,
+		BackoffMultiplier:        2.0,
 	}
 
 	rl := NewEnhancedRateLimiter(config, metrics)
@@ -411,7 +411,7 @@ func TestEnhancedRateLimiterBackoffCalculation(t *testing.T) {
 		{2, 200 * time.Millisecond},
 		{3, 400 * time.Millisecond},
 		{4, 800 * time.Millisecond},
-		{5, 1 * time.Second}, // Should cap at MaxBackoff
+		{5, 1 * time.Second},  // Should cap at MaxBackoff
 		{10, 1 * time.Second}, // Should still cap at MaxBackoff
 	}
 
@@ -426,7 +426,7 @@ func TestEnhancedRateLimiterBackoffCalculation(t *testing.T) {
 func TestEnhancedRateLimiterRetryAfter(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	metrics := NewMetrics(registry)
-	
+
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 10,
 		DomainPerMinute: 60,

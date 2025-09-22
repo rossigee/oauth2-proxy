@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"fmt"
-	"sync"
 )
 
 // ProviderInfo now includes additional fields needed for creating providers
@@ -15,9 +14,8 @@ type ExtendedProviderInfo struct {
 
 // ProviderFactory manages dynamic provider discovery based on email domains
 type ProviderFactory struct {
-	discovery     *UnifiedDiscovery
-	cacheMutex    sync.RWMutex
-	fallbackInfo  *ExtendedProviderInfo
+	discovery    *UnifiedDiscovery
+	fallbackInfo *ExtendedProviderInfo
 }
 
 // NewProviderFactory creates a new provider factory with discovery capabilities
@@ -35,7 +33,7 @@ func (f *ProviderFactory) GetProviderInfoForEmail(email string) (*ExtendedProvid
 	if err != nil {
 		return nil, fmt.Errorf("invalid email format: %v", err)
 	}
-	
+
 	return f.GetProviderInfoForDomain(domain)
 }
 
@@ -50,12 +48,12 @@ func (f *ProviderFactory) GetProviderInfoForDomain(domain string) (*ExtendedProv
 		}
 		return nil, fmt.Errorf("failed to discover provider for domain %s: %v", domain, err)
 	}
-	
+
 	// Create extended provider info from discovered information
 	extendedInfo := &ExtendedProviderInfo{
 		ProviderInfo: providerInfo,
 	}
-	
+
 	// If we have fallback info, use it to fill in missing fields
 	if f.fallbackInfo != nil {
 		if extendedInfo.ClientSecret == "" {
@@ -68,7 +66,7 @@ func (f *ProviderFactory) GetProviderInfoForDomain(domain string) (*ExtendedProv
 			extendedInfo.Scope = f.fallbackInfo.Scope
 		}
 	}
-	
+
 	return extendedInfo, nil
 }
 

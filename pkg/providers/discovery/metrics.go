@@ -17,54 +17,53 @@ const (
 // Metrics provides comprehensive monitoring for email discovery operations
 type Metrics struct {
 	// Discovery operation metrics
-	discoveryRequests   *prometheus.CounterVec
-	discoverySuccess    *prometheus.CounterVec
-	discoveryErrors     *prometheus.CounterVec
-	discoveryDuration   *prometheus.HistogramVec
-	cacheHits          *prometheus.CounterVec
-	cacheMisses        *prometheus.CounterVec
-	
+	discoveryRequests *prometheus.CounterVec
+	discoverySuccess  *prometheus.CounterVec
+	discoveryErrors   *prometheus.CounterVec
+	discoveryDuration *prometheus.HistogramVec
+	cacheHits         *prometheus.CounterVec
+	cacheMisses       *prometheus.CounterVec
+
 	// Provider creation metrics
-	providerCreations   *prometheus.CounterVec
-	providerErrors      *prometheus.CounterVec
-	activeProviders     *prometheus.GaugeVec
-	
+	providerCreations *prometheus.CounterVec
+	providerErrors    *prometheus.CounterVec
+	activeProviders   *prometheus.GaugeVec
+
 	// DNS discovery specific metrics
-	dnsQueries         *prometheus.CounterVec
-	dnsQueryDuration   *prometheus.HistogramVec
-	dnsErrors          *prometheus.CounterVec
-	
+	dnsQueries       *prometheus.CounterVec
+	dnsQueryDuration *prometheus.HistogramVec
+	dnsErrors        *prometheus.CounterVec
+
 	// HTTP discovery specific metrics
-	httpRequests       *prometheus.CounterVec
+	httpRequests        *prometheus.CounterVec
 	httpRequestDuration *prometheus.HistogramVec
-	httpErrors         *prometheus.CounterVec
-	
+	httpErrors          *prometheus.CounterVec
+
 	// Security metrics
 	validationErrors   *prometheus.CounterVec
-	rateLimitHits     *prometheus.CounterVec
+	rateLimitHits      *prometheus.CounterVec
 	suspiciousActivity *prometheus.CounterVec
-	
+
 	// Business metrics
 	domainDistribution *prometheus.CounterVec
 	methodPreference   *prometheus.CounterVec
-	
+
 	// Performance metrics
-	memoryUsage       prometheus.Gauge
-	goroutineCount    prometheus.Gauge
-	
+	memoryUsage    prometheus.Gauge
+	goroutineCount prometheus.Gauge
+
 	// Circuit breaker metrics
-	circuitBreakerState     *prometheus.GaugeVec
+	circuitBreakerState      *prometheus.GaugeVec
 	circuitBreakerOperations *prometheus.CounterVec
 	circuitBreakerEvents     *prometheus.CounterVec
 	circuitBreakerDuration   *prometheus.HistogramVec
-	
+
 	// Rate limiter metrics
-	rateLimiterHits     *prometheus.CounterVec
-	rateLimiterRejects  *prometheus.CounterVec
-	rateLimiterBacklog  *prometheus.GaugeVec
-	
+	rateLimiterHits    *prometheus.CounterVec
+	rateLimiterRejects *prometheus.CounterVec
+	rateLimiterBacklog *prometheus.GaugeVec
+
 	registerer prometheus.Registerer
-	mu         sync.RWMutex
 }
 
 var (
@@ -85,7 +84,7 @@ func NewMetrics(registerer prometheus.Registerer) *Metrics {
 	m := &Metrics{
 		registerer: registerer,
 	}
-	
+
 	m.initializeMetrics()
 	return m
 }
@@ -97,179 +96,179 @@ func (m *Metrics) initializeMetrics() {
 		"Total number of email discovery requests",
 		[]string{"method", "domain"},
 	)
-	
+
 	m.discoverySuccess = m.registerCounterVec(
 		"discovery_success_total",
 		"Total number of successful email discoveries",
 		[]string{"method", "domain", "provider_type"},
 	)
-	
+
 	m.discoveryErrors = m.registerCounterVec(
 		"discovery_errors_total",
 		"Total number of email discovery errors",
 		[]string{"method", "domain", "error_type"},
 	)
-	
+
 	m.discoveryDuration = m.registerHistogramVec(
 		"discovery_duration_seconds",
 		"Time taken for email discovery operations",
 		[]string{"method", "success"},
 		[]float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
 	)
-	
+
 	m.cacheHits = m.registerCounterVec(
 		"cache_hits_total",
 		"Total number of cache hits",
 		[]string{"cache_type", "domain"},
 	)
-	
+
 	m.cacheMisses = m.registerCounterVec(
 		"cache_misses_total",
 		"Total number of cache misses",
 		[]string{"cache_type", "domain"},
 	)
-	
+
 	// Provider creation metrics
 	m.providerCreations = m.registerCounterVec(
 		"provider_creations_total",
 		"Total number of dynamic provider creations",
 		[]string{"provider_type", "domain"},
 	)
-	
+
 	m.providerErrors = m.registerCounterVec(
 		"provider_errors_total",
 		"Total number of provider creation errors",
 		[]string{"provider_type", "domain", "error_type"},
 	)
-	
+
 	m.activeProviders = m.registerGaugeVec(
 		"active_providers",
 		"Current number of active providers",
 		[]string{"provider_type"},
 	)
-	
+
 	// DNS discovery specific metrics
 	m.dnsQueries = m.registerCounterVec(
 		"dns_queries_total",
 		"Total number of DNS queries for discovery",
 		[]string{"domain", "record_type"},
 	)
-	
+
 	m.dnsQueryDuration = m.registerHistogramVec(
 		"dns_query_duration_seconds",
 		"Time taken for DNS queries",
 		[]string{"record_type", "success"},
 		[]float64{.001, .005, .01, .025, .05, .1, .25, .5, 1, 2},
 	)
-	
+
 	m.dnsErrors = m.registerCounterVec(
 		"dns_errors_total",
 		"Total number of DNS query errors",
 		[]string{"domain", "error_type"},
 	)
-	
+
 	// HTTP discovery specific metrics
 	m.httpRequests = m.registerCounterVec(
 		"http_requests_total",
 		"Total number of HTTP requests for discovery",
 		[]string{"domain", "endpoint", "status_code"},
 	)
-	
+
 	m.httpRequestDuration = m.registerHistogramVec(
 		"http_request_duration_seconds",
 		"Time taken for HTTP discovery requests",
 		[]string{"endpoint", "success"},
 		[]float64{.01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 30},
 	)
-	
+
 	m.httpErrors = m.registerCounterVec(
 		"http_errors_total",
 		"Total number of HTTP discovery errors",
 		[]string{"domain", "endpoint", "error_type"},
 	)
-	
+
 	// Security metrics
 	m.validationErrors = m.registerCounterVec(
 		"validation_errors_total",
 		"Total number of input validation errors",
 		[]string{"validation_type", "error_reason"},
 	)
-	
+
 	m.rateLimitHits = m.registerCounterVec(
 		"rate_limit_hits_total",
 		"Total number of rate limit hits",
 		[]string{"limit_type", "client_ip"},
 	)
-	
+
 	m.suspiciousActivity = m.registerCounterVec(
 		"suspicious_activity_total",
 		"Total number of suspicious activity detections",
 		[]string{"activity_type", "domain"},
 	)
-	
+
 	// Business metrics
 	m.domainDistribution = m.registerCounterVec(
 		"domain_distribution_total",
 		"Distribution of discovery requests by domain",
 		[]string{"domain", "success"},
 	)
-	
+
 	m.methodPreference = m.registerCounterVec(
 		"method_preference_total",
 		"Discovery method preferences and usage",
 		[]string{"method", "fallback_reason"},
 	)
-	
+
 	// Performance metrics
 	m.memoryUsage = m.registerGauge(
 		"memory_usage_bytes",
 		"Current memory usage of email discovery system",
 	)
-	
+
 	m.goroutineCount = m.registerGauge(
 		"goroutines_count",
 		"Current number of goroutines in email discovery system",
 	)
-	
+
 	// Circuit breaker metrics
 	m.circuitBreakerState = m.registerGaugeVec(
 		"circuit_breaker_state",
 		"Current state of circuit breakers (0=closed, 1=open, 2=half-open)",
 		[]string{"name", "state"},
 	)
-	
+
 	m.circuitBreakerOperations = m.registerCounterVec(
 		"circuit_breaker_operations_total",
 		"Total number of circuit breaker operations",
 		[]string{"name", "result"},
 	)
-	
+
 	m.circuitBreakerEvents = m.registerCounterVec(
 		"circuit_breaker_events_total",
 		"Total number of circuit breaker state change events",
 		[]string{"name", "event"},
 	)
-	
+
 	m.circuitBreakerDuration = m.registerHistogramVec(
 		"circuit_breaker_operation_duration_seconds",
 		"Duration of operations executed through circuit breakers",
 		[]string{"name", "result"},
 		[]float64{.001, .005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
 	)
-	
+
 	// Rate limiter metrics
 	m.rateLimiterHits = m.registerCounterVec(
 		"rate_limiter_hits_total",
 		"Total number of rate limiter hits (allowed requests)",
 		[]string{"limiter_type", "key"},
 	)
-	
+
 	m.rateLimiterRejects = m.registerCounterVec(
 		"rate_limiter_rejects_total",
 		"Total number of rate limiter rejects (blocked requests)",
 		[]string{"limiter_type", "key", "reason"},
 	)
-	
+
 	m.rateLimiterBacklog = m.registerGaugeVec(
 		"rate_limiter_backlog",
 		"Current backlog of rate limiter buckets",
@@ -287,7 +286,7 @@ func (m *Metrics) registerCounterVec(name, help string, labelNames []string) *pr
 		},
 		labelNames,
 	)
-	
+
 	if err := m.registerer.Register(counter); err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			return are.ExistingCollector.(*prometheus.CounterVec)
@@ -295,7 +294,7 @@ func (m *Metrics) registerCounterVec(name, help string, labelNames []string) *pr
 		// Don't panic in production, log error instead
 		return counter
 	}
-	
+
 	return counter
 }
 
@@ -310,14 +309,14 @@ func (m *Metrics) registerHistogramVec(name, help string, labelNames []string, b
 		},
 		labelNames,
 	)
-	
+
 	if err := m.registerer.Register(histogram); err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			return are.ExistingCollector.(*prometheus.HistogramVec)
 		}
 		return histogram
 	}
-	
+
 	return histogram
 }
 
@@ -331,14 +330,14 @@ func (m *Metrics) registerGaugeVec(name, help string, labelNames []string) *prom
 		},
 		labelNames,
 	)
-	
+
 	if err := m.registerer.Register(gauge); err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			return are.ExistingCollector.(*prometheus.GaugeVec)
 		}
 		return gauge
 	}
-	
+
 	return gauge
 }
 
@@ -349,14 +348,14 @@ func (m *Metrics) registerGauge(name, help string) prometheus.Gauge {
 		Name:      name,
 		Help:      help,
 	})
-	
+
 	if err := m.registerer.Register(gauge); err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			return are.ExistingCollector.(prometheus.Gauge)
 		}
 		return gauge
 	}
-	
+
 	return gauge
 }
 
@@ -448,7 +447,7 @@ func (m *Metrics) UpdateGoroutineCount(count float64) {
 }
 
 // Circuit breaker metrics methods
-func (m *Metrics) CircuitBreakerState(name, action, state string) {
+func (m *Metrics) CircuitBreakerState(name, _ string, state string) {
 	stateValue := float64(0) // closed
 	switch state {
 	case "open":
@@ -504,9 +503,9 @@ func (m *Metrics) ServiceHealth(service string, healthy, healthScore float64) {
 	// Track service health using existing gauge structure
 	// In production, you'd want dedicated service health metrics
 	if healthy > 0 {
-		m.activeProviders.WithLabelValues("healthy_"+service).Set(healthScore)
+		m.activeProviders.WithLabelValues("healthy_" + service).Set(healthScore)
 	} else {
-		m.activeProviders.WithLabelValues("unhealthy_"+service).Set(healthScore)
+		m.activeProviders.WithLabelValues("unhealthy_" + service).Set(healthScore)
 	}
 }
 

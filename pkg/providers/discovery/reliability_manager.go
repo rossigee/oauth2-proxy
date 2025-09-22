@@ -11,30 +11,30 @@ import (
 type ReliabilityConfig struct {
 	// Rate limiting configuration
 	RateLimit EnhancedRateLimitConfig `yaml:"rate_limit" json:"rate_limit"`
-	
+
 	// Circuit breaker configuration
 	CircuitBreaker CircuitBreakerConfig `yaml:"circuit_breaker" json:"circuit_breaker"`
-	
+
 	// Timeout settings
-	DefaultTimeout    time.Duration `yaml:"default_timeout" json:"default_timeout"`
-	DiscoveryTimeout  time.Duration `yaml:"discovery_timeout" json:"discovery_timeout"`
-	DNSTimeout        time.Duration `yaml:"dns_timeout" json:"dns_timeout"`
-	HTTPTimeout       time.Duration `yaml:"http_timeout" json:"http_timeout"`
-	
+	DefaultTimeout   time.Duration `yaml:"default_timeout" json:"default_timeout"`
+	DiscoveryTimeout time.Duration `yaml:"discovery_timeout" json:"discovery_timeout"`
+	DNSTimeout       time.Duration `yaml:"dns_timeout" json:"dns_timeout"`
+	HTTPTimeout      time.Duration `yaml:"http_timeout" json:"http_timeout"`
+
 	// Retry settings
-	EnableRetry       bool          `yaml:"enable_retry" json:"enable_retry"`
-	MaxRetries        int           `yaml:"max_retries" json:"max_retries"`
-	RetryDelay        time.Duration `yaml:"retry_delay" json:"retry_delay"`
-	RetryBackoff      float64       `yaml:"retry_backoff" json:"retry_backoff"`
-	
+	EnableRetry  bool          `yaml:"enable_retry" json:"enable_retry"`
+	MaxRetries   int           `yaml:"max_retries" json:"max_retries"`
+	RetryDelay   time.Duration `yaml:"retry_delay" json:"retry_delay"`
+	RetryBackoff float64       `yaml:"retry_backoff" json:"retry_backoff"`
+
 	// Health check settings
-	EnableHealthCheck bool          `yaml:"enable_health_check" json:"enable_health_check"`
+	EnableHealthCheck   bool          `yaml:"enable_health_check" json:"enable_health_check"`
 	HealthCheckInterval time.Duration `yaml:"health_check_interval" json:"health_check_interval"`
-	HealthThreshold   int           `yaml:"health_threshold" json:"health_threshold"`
-	
+	HealthThreshold     int           `yaml:"health_threshold" json:"health_threshold"`
+
 	// Monitoring settings
-	EnableMonitoring  bool          `yaml:"enable_monitoring" json:"enable_monitoring"`
-	MetricsInterval   time.Duration `yaml:"metrics_interval" json:"metrics_interval"`
+	EnableMonitoring bool          `yaml:"enable_monitoring" json:"enable_monitoring"`
+	MetricsInterval  time.Duration `yaml:"metrics_interval" json:"metrics_interval"`
 }
 
 // GetDefaultReliabilityConfig returns a secure default configuration
@@ -42,24 +42,24 @@ func GetDefaultReliabilityConfig() ReliabilityConfig {
 	return ReliabilityConfig{
 		RateLimit:      GetDefaultEnhancedRateLimitConfig(),
 		CircuitBreaker: GetDefaultCircuitBreakerConfig(),
-		
+
 		// Timeout settings
 		DefaultTimeout:   30 * time.Second,
 		DiscoveryTimeout: 10 * time.Second,
 		DNSTimeout:       5 * time.Second,
 		HTTPTimeout:      10 * time.Second,
-		
+
 		// Retry settings
 		EnableRetry:  true,
 		MaxRetries:   3,
 		RetryDelay:   1 * time.Second,
 		RetryBackoff: 2.0,
-		
+
 		// Health check settings
 		EnableHealthCheck:   true,
 		HealthCheckInterval: 60 * time.Second,
 		HealthThreshold:     5,
-		
+
 		// Monitoring settings
 		EnableMonitoring: true,
 		MetricsInterval:  30 * time.Second,
@@ -68,26 +68,26 @@ func GetDefaultReliabilityConfig() ReliabilityConfig {
 
 // ReliabilityManager provides comprehensive reliability features
 type ReliabilityManager struct {
-	config              ReliabilityConfig
-	rateLimiter         *EnhancedRateLimiter
-	circuitBreakerMgr   *CircuitBreakerManager
-	metrics             *Metrics
-	healthStatus        map[string]*HealthStatus
-	healthMutex         sync.RWMutex
-	stopHealthCheck     chan struct{}
-	stopMonitoring      chan struct{}
+	config            ReliabilityConfig
+	rateLimiter       *EnhancedRateLimiter
+	circuitBreakerMgr *CircuitBreakerManager
+	metrics           *Metrics
+	healthStatus      map[string]*HealthStatus
+	healthMutex       sync.RWMutex
+	stopHealthCheck   chan struct{}
+	stopMonitoring    chan struct{}
 }
 
 // HealthStatus tracks the health of a service endpoint
 type HealthStatus struct {
-	Service         string    `json:"service"`
-	Healthy         bool      `json:"healthy"`
-	LastCheck       time.Time `json:"last_check"`
-	FailureCount    int       `json:"failure_count"`
-	SuccessCount    int       `json:"success_count"`
-	LastError       string    `json:"last_error,omitempty"`
-	ResponseTime    time.Duration `json:"response_time"`
-	HealthScore     float64   `json:"health_score"`
+	Service      string        `json:"service"`
+	Healthy      bool          `json:"healthy"`
+	LastCheck    time.Time     `json:"last_check"`
+	FailureCount int           `json:"failure_count"`
+	SuccessCount int           `json:"success_count"`
+	LastError    string        `json:"last_error,omitempty"`
+	ResponseTime time.Duration `json:"response_time"`
+	HealthScore  float64       `json:"health_score"`
 }
 
 // NewReliabilityManager creates a new reliability manager
@@ -143,7 +143,7 @@ func (rm *ReliabilityManager) ExecuteWithProtection(
 
 	// Step 2: Circuit breaker protection
 	circuitBreaker := rm.circuitBreakerMgr.GetCircuitBreaker(operation)
-	
+
 	// Step 3: Execute with timeout and circuit breaker
 	return rm.executeWithTimeout(ctx, operation, circuitBreaker, fn)
 }
@@ -184,11 +184,11 @@ func (rm *ReliabilityManager) ExecuteWithRetry(
 	for attempt := 0; attempt <= rm.config.MaxRetries; attempt++ {
 		if attempt > 0 {
 			// Calculate backoff delay
-			delay := time.Duration(float64(rm.config.RetryDelay) * 
+			delay := time.Duration(float64(rm.config.RetryDelay) *
 				(rm.config.RetryBackoff * float64(attempt-1)))
-			
+
 			rm.metrics.ReliabilityEvent("retry_attempt", operation, fmt.Sprintf("attempt_%d", attempt))
-			
+
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
@@ -205,7 +205,7 @@ func (rm *ReliabilityManager) ExecuteWithRetry(
 		}
 
 		lastErr = err
-		
+
 		// Don't retry on rate limit errors or circuit breaker errors
 		if isNonRetryableError(err) {
 			break
@@ -225,7 +225,7 @@ func (rm *ReliabilityManager) DiscoverWithReliability(
 	discoveryFn func(context.Context, string) (*ProviderInfo, error),
 ) (*ProviderInfo, error) {
 	var result *ProviderInfo
-	
+
 	err := rm.ExecuteWithRetry(
 		ctx,
 		"discovery",
@@ -239,7 +239,7 @@ func (rm *ReliabilityManager) DiscoverWithReliability(
 				rm.updateHealthStatus("discovery", false, err.Error(), 0)
 				return err
 			}
-			
+
 			result = info
 			rm.updateHealthStatus("discovery", true, "", 0)
 			return nil
@@ -257,7 +257,7 @@ func (rm *ReliabilityManager) DNSQueryWithReliability(
 	queryFn func(context.Context, string) ([]string, error),
 ) ([]string, error) {
 	var result []string
-	
+
 	err := rm.ExecuteWithRetry(
 		ctx,
 		"dns_query",
@@ -269,12 +269,12 @@ func (rm *ReliabilityManager) DNSQueryWithReliability(
 			start := time.Now()
 			records, err := queryFn(ctx, domain)
 			duration := time.Since(start)
-			
+
 			if err != nil {
 				rm.updateHealthStatus("dns", false, err.Error(), duration)
 				return err
 			}
-			
+
 			result = records
 			rm.updateHealthStatus("dns", true, "", duration)
 			return nil
@@ -292,7 +292,7 @@ func (rm *ReliabilityManager) HTTPRequestWithReliability(
 	requestFn func(context.Context, string) (*ProviderInfo, error),
 ) (*ProviderInfo, error) {
 	var result *ProviderInfo
-	
+
 	err := rm.ExecuteWithRetry(
 		ctx,
 		"http_request",
@@ -304,12 +304,12 @@ func (rm *ReliabilityManager) HTTPRequestWithReliability(
 			start := time.Now()
 			info, err := requestFn(ctx, domain)
 			duration := time.Since(start)
-			
+
 			if err != nil {
 				rm.updateHealthStatus("http", false, err.Error(), duration)
 				return err
 			}
-			
+
 			result = info
 			rm.updateHealthStatus("http", true, "", duration)
 			return nil
@@ -353,10 +353,10 @@ func (rm *ReliabilityManager) updateHealthStatus(service string, healthy bool, e
 	if healthy {
 		status.SuccessCount++
 		status.LastError = ""
-		
+
 		// Improve health score
 		status.HealthScore = calculateHealthScore(status.SuccessCount, status.FailureCount)
-		
+
 		// Mark as healthy if enough successes
 		if status.SuccessCount >= rm.config.HealthThreshold {
 			status.Healthy = true
@@ -364,10 +364,10 @@ func (rm *ReliabilityManager) updateHealthStatus(service string, healthy bool, e
 	} else {
 		status.FailureCount++
 		status.LastError = errorMsg
-		
+
 		// Decrease health score
 		status.HealthScore = calculateHealthScore(status.SuccessCount, status.FailureCount)
-		
+
 		// Mark as unhealthy if enough failures
 		if status.FailureCount >= rm.config.HealthThreshold {
 			status.Healthy = false
@@ -388,15 +388,15 @@ func calculateHealthScore(successCount, failureCount int) float64 {
 	if total == 0 {
 		return 1.0
 	}
-	
+
 	score := float64(successCount) / float64(total)
-	
+
 	// Apply decay factor for recent failures
 	if failureCount > 0 {
 		decayFactor := 1.0 - (float64(failureCount) / float64(total+10))
 		score *= decayFactor
 	}
-	
+
 	return score
 }
 
@@ -433,18 +433,18 @@ func (rm *ReliabilityManager) performHealthChecks() {
 func (rm *ReliabilityManager) performServiceHealthCheck(service string) {
 	// This is a basic health check - in practice, you might want to implement
 	// specific health check logic for each service type
-	
+
 	rm.healthMutex.RLock()
 	status, exists := rm.healthStatus[service]
 	if !exists {
 		rm.healthMutex.RUnlock()
 		return
 	}
-	
+
 	// Simple health check: if no recent activity, mark as unknown
 	lastActivity := status.LastCheck
 	rm.healthMutex.RUnlock()
-	
+
 	if time.Since(lastActivity) > rm.config.HealthCheckInterval*2 {
 		rm.updateHealthStatus(service, false, "no_recent_activity", 0)
 	}
@@ -522,11 +522,11 @@ func (rm *ReliabilityManager) GetStats() ReliabilityStats {
 // Stop stops all background processes
 func (rm *ReliabilityManager) Stop() {
 	rm.rateLimiter.Stop()
-	
+
 	if rm.config.EnableHealthCheck {
 		close(rm.stopHealthCheck)
 	}
-	
+
 	if rm.config.EnableMonitoring {
 		close(rm.stopMonitoring)
 	}
@@ -534,10 +534,10 @@ func (rm *ReliabilityManager) Stop() {
 
 // ReliabilityStats represents comprehensive reliability statistics
 type ReliabilityStats struct {
-	RateLimiter     EnhancedRateLimiterStats           `json:"rate_limiter"`
-	CircuitBreakers map[string]CircuitBreakerStats     `json:"circuit_breakers"`
-	HealthStatus    map[string]*HealthStatus           `json:"health_status"`
-	Config          ReliabilityConfig                  `json:"config"`
+	RateLimiter     EnhancedRateLimiterStats       `json:"rate_limiter"`
+	CircuitBreakers map[string]CircuitBreakerStats `json:"circuit_breakers"`
+	HealthStatus    map[string]*HealthStatus       `json:"health_status"`
+	Config          ReliabilityConfig              `json:"config"`
 }
 
 // isNonRetryableError checks if an error should not be retried
@@ -548,8 +548,8 @@ func isNonRetryableError(err error) bool {
 
 	errStr := err.Error()
 	return contains(errStr, "rate limit") ||
-		   contains(errStr, "circuit breaker") ||
-		   contains(errStr, "validation") ||
-		   contains(errStr, "forbidden") ||
-		   contains(errStr, "unauthorized")
+		contains(errStr, "circuit breaker") ||
+		contains(errStr, "validation") ||
+		contains(errStr, "forbidden") ||
+		contains(errStr, "unauthorized")
 }

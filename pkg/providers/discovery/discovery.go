@@ -5,8 +5,13 @@ import (
 	"log"
 )
 
-// DiscoveryMethod represents the type of discovery method
-type DiscoveryMethod string
+// Method represents the type of discovery method
+type Method string
+
+// DiscoveryMethod is an alias for Method to maintain backward compatibility
+//
+//nolint:revive // Keep backward compatibility
+type DiscoveryMethod = Method
 
 const (
 	MethodDNS       DiscoveryMethod = "dns"
@@ -28,13 +33,18 @@ type UnifiedDiscovery struct {
 	metrics   *Metrics
 }
 
-// DiscoveryConfig represents configuration for the unified discovery system
-type DiscoveryConfig struct {
-	Methods       []DiscoveryMethod        `yaml:"methods" json:"methods"`
-	DomainMaps    []DomainProviderConfig   `yaml:"domain_providers" json:"domain_providers"`
-	DNSEnabled    bool                     `yaml:"dns_enabled" json:"dns_enabled"`
-	WellKnownEnabled bool                  `yaml:"wellknown_enabled" json:"wellknown_enabled"`
+// Config represents configuration for the unified discovery system
+type Config struct {
+	Methods          []DiscoveryMethod      `yaml:"methods" json:"methods"`
+	DomainMaps       []DomainProviderConfig `yaml:"domain_providers" json:"domain_providers"`
+	DNSEnabled       bool                   `yaml:"dns_enabled" json:"dns_enabled"`
+	WellKnownEnabled bool                   `yaml:"wellknown_enabled" json:"wellknown_enabled"`
 }
+
+// DiscoveryConfig is an alias for Config to maintain backward compatibility
+//
+//nolint:revive // Keep backward compatibility
+type DiscoveryConfig = Config
 
 // NewUnifiedDiscovery creates a new unified discovery client
 func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
@@ -42,7 +52,7 @@ func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
 		methods: config.Methods,
 		metrics: GetMetrics(),
 	}
-	
+
 	// Initialize discovery methods based on configuration
 	for _, method := range config.Methods {
 		switch method {
@@ -60,7 +70,7 @@ func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
 			}
 		}
 	}
-	
+
 	// Set default methods if none specified
 	if len(discovery.methods) == 0 {
 		discovery.methods = []DiscoveryMethod{MethodConfig, MethodDNS, MethodWellKnown}
@@ -68,12 +78,12 @@ func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
 		discovery.dns = NewDNSDiscovery()
 		discovery.wellKnown = NewWellKnownDiscovery()
 	}
-	
+
 	// Initialize metrics for each method
 	for _, method := range discovery.methods {
 		discovery.metrics.MethodUsage(string(method), "initialization")
 	}
-	
+
 	return discovery
 }
 
@@ -81,20 +91,18 @@ func NewUnifiedDiscovery(config DiscoveryConfig) *UnifiedDiscovery {
 func (u *UnifiedDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error) {
 	// Start overall discovery timer
 	timer := u.metrics.StartTimer()
-	
+
 	// Track discovery request
 	u.metrics.DiscoveryRequest("unified", domain)
-	
+
 	var lastErr error
-	var attemptedMethods []string
-	
+
 	for _, method := range u.methods {
 		methodStr := string(method)
-		attemptedMethods = append(attemptedMethods, methodStr)
-		
+
 		var discoverer Discoverer
 		var fallbackReason string
-		
+
 		switch method {
 		case MethodDNS:
 			if u.dns != nil {
@@ -115,51 +123,49 @@ func (u *UnifiedDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error
 				fallbackReason = "wellknown_disabled"
 			}
 		}
-		
+
 		if discoverer == nil {
 			u.metrics.MethodUsage(methodStr, fallbackReason)
 			continue
 		}
-		
+
 		// Start method-specific timer
 		methodTimer := u.metrics.StartTimer()
 		u.metrics.DiscoveryRequest(methodStr, domain)
-		
+
 		info, err := discoverer.DiscoverProvider(domain)
 		if err == nil && info != nil {
 			// Success metrics
 			methodTimer.ObserveDiscovery(methodStr, domain, info.ProviderType, true, "")
 			timer.ObserveDiscovery("unified", domain, info.ProviderType, true, "")
-			
+
 			u.metrics.MethodUsage(methodStr, "success")
 			log.Printf("Successfully discovered provider for domain %s using method %s", domain, method)
 			return info, nil
 		}
-		
+
 		// Error metrics
 		errorType := "unknown"
 		if err != nil {
 			errorType = classifyError(err)
 			lastErr = err
 		}
-		
+
 		methodTimer.ObserveDiscovery(methodStr, domain, "", false, errorType)
 		u.metrics.MethodUsage(methodStr, "fallback_"+errorType)
-		
+
 		log.Printf("Discovery method %s failed for domain %s: %v", method, domain, err)
 	}
-	
+
 	// All methods failed
-	finalErrorType := "all_methods_failed"
+	var finalErrorType string
 	if lastErr != nil {
 		finalErrorType = classifyError(lastErr)
-		timer.ObserveDiscovery("unified", domain, "", false, finalErrorType)
-		return nil, fmt.Errorf("all discovery methods failed for domain %s, last error: %v", domain, lastErr)
+	} else {
+		finalErrorType = "all_methods_failed"
 	}
-	
-	// No methods configured
-	timer.ObserveDiscovery("unified", domain, "", false, "no_methods_configured")
-	return nil, fmt.Errorf("no discovery methods configured for domain %s", domain)
+	timer.ObserveDiscovery("unified", domain, "", false, finalErrorType)
+	return nil, fmt.Errorf("all discovery methods failed for domain %s, last error: %v", domain, lastErr)
 }
 
 // classifyError categorizes errors for metrics tracking
@@ -167,7 +173,7 @@ func classifyError(err error) string {
 	if err == nil {
 		return "none"
 	}
-	
+
 	errStr := err.Error()
 	switch {
 	case contains(errStr, "timeout"):
@@ -191,9 +197,9 @@ func classifyError(err error) string {
 
 // contains is a simple string contains helper
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && 
-		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
-		 indexOfSubstring(s, substr) >= 0)))
+	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) &&
+		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
+			indexOfSubstring(s, substr) >= 0)))
 }
 
 func indexOfSubstring(s, substr string) int {
@@ -212,16 +218,16 @@ func (u *UnifiedDiscovery) DiscoverProviderFromEmail(email string) (*ProviderInf
 		u.metrics.ValidationError("email_format", err.Error())
 		return nil, fmt.Errorf("email validation failed: %v", err)
 	}
-	
+
 	domain, err := ExtractDomainFromEmail(email)
 	if err != nil {
 		u.metrics.ValidationError("domain_extraction", err.Error())
 		return nil, fmt.Errorf("failed to extract domain from email %s: %v", email, err)
 	}
-	
+
 	// Track the email-to-provider request
 	u.metrics.DiscoveryRequest("email_discovery", domain)
-	
+
 	return u.DiscoverProvider(domain)
 }
 
@@ -230,7 +236,7 @@ func (u *UnifiedDiscovery) AddConfiguredProvider(domain string, info *ProviderIn
 	if u.config == nil {
 		u.config = NewConfigDiscovery([]DomainProviderConfig{})
 	}
-	
+
 	u.config.AddDomainProvider(domain, info)
 	return nil
 }
@@ -256,15 +262,15 @@ func ValidateEmail(email string) error {
 	if email == "" {
 		return fmt.Errorf("email cannot be empty")
 	}
-	
+
 	domain, err := ExtractDomainFromEmail(email)
 	if err != nil {
 		return err
 	}
-	
+
 	if !IsValidDomain(domain) {
 		return fmt.Errorf("invalid domain in email: %s", domain)
 	}
-	
+
 	return nil
 }

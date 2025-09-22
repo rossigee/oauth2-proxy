@@ -40,7 +40,7 @@ func createTestFactory() *discovery.ProviderFactory {
 
 func TestEmailLoginHandler(t *testing.T) {
 	factory := createTestFactory()
-	
+
 	template := `<html><body>
 		{{if .Error}}<div class="error">{{.Error}}</div>{{end}}
 		<form method="post">
@@ -108,13 +108,17 @@ func TestEmailLoginHandler(t *testing.T) {
 
 		handler.ServeHTTP(w, req)
 
-		if w.Code != http.StatusOK {
-			t.Errorf("Expected status 200, got: %d", w.Code)
+		if w.Code != http.StatusFound {
+			t.Errorf("Expected status 302 (redirect), got: %d", w.Code)
 		}
 
-		body := w.Body.String()
-		if !strings.Contains(body, "success") {
-			t.Errorf("Expected success response")
+		location := w.Header().Get("Location")
+		if !strings.Contains(location, "/oauth2/start") {
+			t.Errorf("Expected redirect to OAuth start URL, got: %s", location)
+		}
+
+		if !strings.Contains(location, "email=user%40test.com") {
+			t.Errorf("Expected email parameter in redirect URL, got: %s", location)
 		}
 	})
 
@@ -168,13 +172,17 @@ func TestEmailLoginHandler(t *testing.T) {
 
 		handler.ServeHTTP(w, req)
 
-		if w.Code != http.StatusOK {
-			t.Errorf("Expected status 200, got: %d", w.Code)
+		if w.Code != http.StatusFound {
+			t.Errorf("Expected status 302 (redirect), got: %d", w.Code)
 		}
 
-		body := w.Body.String()
-		if !strings.Contains(body, "success") {
-			t.Errorf("Expected success response for fallback provider")
+		location := w.Header().Get("Location")
+		if !strings.Contains(location, "/oauth2/start") {
+			t.Errorf("Expected redirect to OAuth start URL, got: %s", location)
+		}
+
+		if !strings.Contains(location, "email=user%40unknown.com") {
+			t.Errorf("Expected email parameter in redirect URL, got: %s", location)
 		}
 	})
 
@@ -220,10 +228,10 @@ func TestEmailLoginHandler(t *testing.T) {
 
 func TestEmailLoginHandlerTemplateError(t *testing.T) {
 	factory := createTestFactory()
-	
+
 	// Invalid template syntax
 	invalidTemplate := `<html><body>{{.InvalidSyntax</body></html>`
-	
+
 	redirectURL, _ := url.Parse("https://oauth2-proxy.example.com/oauth2/callback")
 	fallbackURL := "/oauth2/sign_in"
 

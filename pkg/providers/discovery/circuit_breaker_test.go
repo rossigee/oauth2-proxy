@@ -84,7 +84,7 @@ func TestCircuitBreakerStates(t *testing.T) {
 
 		// Wait for timeout and transition to half-open
 		time.Sleep(config.Timeout + 10*time.Millisecond)
-		
+
 		// First request should succeed (to half-open)
 		err := cb.Execute(context.Background(), func() error {
 			return nil
@@ -131,15 +131,18 @@ func TestCircuitBreakerLimitsInHalfOpen(t *testing.T) {
 		err := cb.Execute(context.Background(), func() error {
 			return nil
 		})
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Request %d should succeed", i)
 	}
 
-	// Additional requests should be rejected
+	// Additional requests should be rejected because we've hit MaxRequests in half-open state
+	// Even though we haven't reached SuccessThreshold yet
 	err := cb.Execute(context.Background(), func() error {
 		return nil
 	})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "circuit breaker")
+	assert.Error(t, err, "Request beyond MaxRequests should be rejected")
+	if err != nil {
+		assert.Contains(t, err.Error(), "circuit breaker")
+	}
 }
 
 func TestCircuitBreakerManager(t *testing.T) {
@@ -289,8 +292,8 @@ func TestCircuitBreakerFailureClassification(t *testing.T) {
 	cb := NewCircuitBreaker("test", config, metrics)
 
 	tests := []struct {
-		name     string
-		err      error
+		name      string
+		err       error
 		isFailure bool
 	}{
 		{"Success", nil, false},

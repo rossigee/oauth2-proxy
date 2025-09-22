@@ -1,0 +1,35 @@
+# Basic Email Discovery Configuration
+# This example shows minimal configuration to enable email discovery
+
+# Standard OAuth2-Proxy Configuration
+http_address: "0.0.0.0:4180"
+upstreams: ["http://localhost:8080/"]
+cookie_secret: "your-cookie-secret-here"
+cookie_secure: true
+cookie_domains: [".company.com"]
+
+# Email Discovery Configuration
+email_discovery:
+  enabled: true
+  fallback_provider: "default"  # Fallback to existing provider
+  methods: ["config", "dns", "wellknown"]
+  
+  # Simple domain-to-provider mapping
+  domain_providers:
+    - domain: "company.com"
+      provider_type: "oidc"
+      issuer_url: "https://sso.company.com"
+      client_id: "oauth2-proxy"
+      client_secret: "your-oidc-client-secret"
+      scopes: ["openid", "email", "profile"]
+      
+    - domain: "gmail.com"
+      provider_type: "google"
+      client_id: "your-google-client-id"
+      client_secret: "your-google-client-secret"
+
+# Keep existing provider as fallback
+provider: "oidc"
+oidc_issuer_url: "https://default-sso.company.com"
+client_id: "oauth2-proxy-default"
+client_secret: "your-default-client-secret"

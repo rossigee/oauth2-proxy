@@ -58,7 +58,7 @@ func main() {
 
 	for _, email := range testEmails {
 		fmt.Printf("\nEmail: %s\n", email)
-		
+
 		// Validate email first
 		if err := discovery.ValidateEmail(email); err != nil {
 			fmt.Printf("  ❌ Invalid email: %v\n", err)

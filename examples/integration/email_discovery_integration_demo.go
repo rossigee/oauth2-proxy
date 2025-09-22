@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/apis/options"
-	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/handlers"
+	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
 )
 
 func main() {
@@ -53,7 +53,7 @@ func main() {
 	// Test 2: Convert to discovery config
 	fmt.Println("\nTest 2: Converting to DiscoveryConfig...")
 	discoveryConfig := emailOpts.ToDiscoveryConfig(domainProviders)
-	fmt.Printf("✅ Converted to DiscoveryConfig with %d methods and %d domain mappings\n", 
+	fmt.Printf("✅ Converted to DiscoveryConfig with %d methods and %d domain mappings\n",
 		len(discoveryConfig.Methods), len(discoveryConfig.DomainMaps))
 
 	// Test 3: Create provider factory
@@ -66,27 +66,27 @@ func main() {
 		},
 		ClientSecret: "fallback-secret",
 	}
-	
+
 	providerFactory := discovery.NewProviderFactory(discoveryConfig, fallbackInfo)
 	fmt.Println("✅ ProviderFactory created successfully")
 
 	// Test 4: Test email discovery
 	fmt.Println("\nTest 4: Testing email discovery...")
 	testEmails := []string{
-		"user@test.com",     // Should find configured provider
-		"user@gmail.com",    // Should find configured provider
-		"user@unknown.com",  // Should fall back to default
+		"user@test.com",    // Should find configured provider
+		"user@gmail.com",   // Should find configured provider
+		"user@unknown.com", // Should fall back to default
 	}
 
 	for _, email := range testEmails {
 		fmt.Printf("\nTesting email: %s\n", email)
-		
+
 		providerInfo, err := providerFactory.GetProviderInfoForEmail(email)
 		if err != nil {
 			fmt.Printf("  ❌ Discovery failed: %v\n", err)
 			continue
 		}
-		
+
 		fmt.Printf("  ✅ Discovery successful!\n")
 		fmt.Printf("     Issuer URL: %s\n", providerInfo.IssuerURL)
 		fmt.Printf("     Provider Type: %s\n", providerInfo.ProviderType)
@@ -95,7 +95,7 @@ func main() {
 
 	// Test 5: Create email login handler
 	fmt.Println("\nTest 5: Creating EmailLoginHandler...")
-	
+
 	// Simple email template
 	emailTemplate := `<!DOCTYPE html>
 <html>
@@ -129,7 +129,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Handler failed to get provider info: %v", err)
 	}
-	
+
 	fmt.Printf("✅ Handler successfully discovered provider for %s:\n", testEmail)
 	fmt.Printf("   Issuer URL: %s\n", providerInfo.IssuerURL)
 	fmt.Printf("   Provider Type: %s\n", providerInfo.ProviderType)
@@ -139,11 +139,11 @@ func main() {
 	opts := options.NewOptions()
 	opts.EmailDiscovery = emailOpts
 	opts.EmailDomainProviders = domainProviders
-	
+
 	if !opts.EmailDiscovery.Enabled {
 		log.Fatalf("EmailDiscovery should be enabled in options")
 	}
-	
+
 	fmt.Printf("✅ EmailDiscovery successfully integrated into Options struct\n")
 	fmt.Printf("   Enabled: %t\n", opts.EmailDiscovery.Enabled)
 	fmt.Printf("   Methods: %v\n", opts.EmailDiscovery.Methods)

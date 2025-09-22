@@ -22,26 +22,26 @@ type DomainProviderConfig struct {
 // NewConfigDiscovery creates a new configuration-based discovery client
 func NewConfigDiscovery(configs []DomainProviderConfig) *ConfigDiscovery {
 	domainMap := make(map[string]*ProviderInfo)
-	
+
 	for _, config := range configs {
 		// Normalize domain to lowercase
 		domain := strings.ToLower(strings.TrimSpace(config.Domain))
 		if domain == "" {
 			continue
 		}
-		
+
 		providerType := config.ProviderType
 		if providerType == "" {
 			providerType = "oidc" // Default to OIDC
 		}
-		
+
 		domainMap[domain] = &ProviderInfo{
 			IssuerURL:    config.IssuerURL,
 			ProviderType: providerType,
 			ClientID:     config.ClientID,
 		}
 	}
-	
+
 	return &ConfigDiscovery{
 		domainMap: domainMap,
 	}
@@ -51,7 +51,7 @@ func NewConfigDiscovery(configs []DomainProviderConfig) *ConfigDiscovery {
 func (c *ConfigDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error) {
 	// Normalize domain to lowercase for lookup
 	normalizedDomain := strings.ToLower(strings.TrimSpace(domain))
-	
+
 	if info, exists := c.domainMap[normalizedDomain]; exists {
 		// Return a copy to avoid external modification
 		return &ProviderInfo{
@@ -60,7 +60,7 @@ func (c *ConfigDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error)
 			ClientID:     info.ClientID,
 		}, nil
 	}
-	
+
 	return nil, fmt.Errorf("no provider configuration found for domain: %s", domain)
 }
 
