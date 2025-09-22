@@ -100,19 +100,19 @@ func (h *EmailLoginHandler) handlePostEmailForm(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	logger.Printf("Successfully discovered provider for email %s: %s (%s)", 
+	logger.Printf("Successfully discovered provider for email %s: %s (%s)",
 		email, providerInfo.IssuerURL, providerInfo.ProviderType)
 
 	// Redirect to OAuth start with email parameter for dynamic provider selection
 	oauthStartURL := "/oauth2/start"
 	params := url.Values{}
 	params.Set("email", email)
-	
+
 	// Preserve any existing redirect URL
 	if rd := r.URL.Query().Get("rd"); rd != "" {
 		params.Set("rd", rd)
 	}
-	
+
 	redirectURL := oauthStartURL + "?" + params.Encode()
 	logger.Printf("Redirecting to OAuth start with email parameter: %s", redirectURL)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
@@ -121,13 +121,13 @@ func (h *EmailLoginHandler) handlePostEmailForm(w http.ResponseWriter, r *http.R
 // redirectWithError redirects back to the email form with an error message
 func (h *EmailLoginHandler) redirectWithError(w http.ResponseWriter, r *http.Request, errorMsg string) {
 	email := r.Form.Get("email")
-	
+
 	params := url.Values{}
 	params.Set("error", errorMsg)
 	if email != "" {
 		params.Set("email", email)
 	}
-	
+
 	redirectURL := "/oauth2/email-login?" + params.Encode()
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }

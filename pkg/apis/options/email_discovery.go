@@ -6,19 +6,19 @@ import "github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
 type EmailDiscoveryOptions struct {
 	// Enable email-domain based provider routing
 	Enabled bool `flag:"email-domain-routing" cfg:"email_domain_routing" env:"OAUTH2_PROXY_EMAIL_DOMAIN_ROUTING"`
-	
+
 	// Discovery methods to use in priority order
 	Methods []string `flag:"discovery-method" cfg:"discovery_methods" env:"OAUTH2_PROXY_DISCOVERY_METHODS"`
-	
+
 	// Enable DNS TXT record discovery
 	DNSEnabled bool `flag:"dns-discovery" cfg:"dns_discovery" env:"OAUTH2_PROXY_DNS_DISCOVERY"`
-	
+
 	// Enable HTTP well-known discovery
 	WellKnownEnabled bool `flag:"wellknown-discovery" cfg:"wellknown_discovery" env:"OAUTH2_PROXY_WELLKNOWN_DISCOVERY"`
-	
+
 	// Fallback provider ID when discovery fails
 	FallbackProvider string `flag:"fallback-provider" cfg:"fallback_provider" env:"OAUTH2_PROXY_FALLBACK_PROVIDER"`
-	
+
 	// URL to redirect to for fallback authentication
 	FallbackURL string `flag:"fallback-url" cfg:"fallback_url" env:"OAUTH2_PROXY_FALLBACK_URL"`
 }
@@ -46,7 +46,7 @@ func (e *EmailDiscoveryOptions) ToDiscoveryConfig(domainProviders []DomainProvid
 			methods = append(methods, discovery.MethodWellKnown)
 		}
 	}
-	
+
 	// Convert domain mappings
 	domainMaps := make([]discovery.DomainProviderConfig, 0, len(domainProviders))
 	for _, mapping := range domainProviders {
@@ -58,7 +58,7 @@ func (e *EmailDiscoveryOptions) ToDiscoveryConfig(domainProviders []DomainProvid
 			ClientSecret: mapping.ClientSecret,
 		})
 	}
-	
+
 	return discovery.DiscoveryConfig{
 		Methods:          methods,
 		DomainMaps:       domainMaps,
@@ -82,24 +82,24 @@ func GetDefaultEmailDiscoveryOptions() EmailDiscoveryOptions {
 // Validate validates the email discovery configuration
 func (e *EmailDiscoveryOptions) Validate(domainProviders []DomainProviderMapping) []string {
 	var msgs []string
-	
+
 	if !e.Enabled {
 		return msgs // No validation needed if disabled
 	}
-	
+
 	// Validate methods
 	validMethods := map[string]bool{
 		"dns":       true,
 		"config":    true,
 		"wellknown": true,
 	}
-	
+
 	for _, method := range e.Methods {
 		if !validMethods[method] {
 			msgs = append(msgs, "invalid discovery method: "+method+" (valid: dns, config, wellknown)")
 		}
 	}
-	
+
 	// Validate domain mappings
 	domainsSeen := make(map[string]bool)
 	for _, mapping := range domainProviders {
@@ -107,20 +107,20 @@ func (e *EmailDiscoveryOptions) Validate(domainProviders []DomainProviderMapping
 			msgs = append(msgs, "domain_providers: domain is required")
 			continue
 		}
-		
+
 		if domainsSeen[mapping.Domain] {
 			msgs = append(msgs, "domain_providers: duplicate domain "+mapping.Domain)
 		}
 		domainsSeen[mapping.Domain] = true
-		
+
 		if mapping.IssuerURL == "" {
 			msgs = append(msgs, "domain_providers: issuer_url is required for domain "+mapping.Domain)
 		}
-		
+
 		if mapping.ClientID == "" {
 			msgs = append(msgs, "domain_providers: client_id is required for domain "+mapping.Domain)
 		}
 	}
-	
+
 	return msgs
 }

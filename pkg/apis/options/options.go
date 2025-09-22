@@ -51,10 +51,10 @@ type Options struct {
 	MetricsServer Server `cfg:",internal"`
 
 	Providers Providers `cfg:",internal"`
-	
+
 	// Email-domain based provider discovery
 	EmailDiscovery EmailDiscoveryOptions `cfg:",squash"`
-	
+
 	// Domain provider mappings (config file only - complex configuration not suitable for command line)
 	EmailDomainProviders []DomainProviderMapping `cfg:",internal"`
 

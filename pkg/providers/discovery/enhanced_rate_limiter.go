@@ -11,70 +11,70 @@ import (
 // EnhancedRateLimitConfig defines comprehensive rate limiting configuration
 type EnhancedRateLimitConfig struct {
 	// Basic rate limits
-	GlobalPerSecond    int           `yaml:"global_per_second" json:"global_per_second"`
-	DomainPerMinute    int           `yaml:"domain_per_minute" json:"domain_per_minute"`
-	IPPerMinute        int           `yaml:"ip_per_minute" json:"ip_per_minute"`
-	UserPerMinute      int           `yaml:"user_per_minute" json:"user_per_minute"`
-	
+	GlobalPerSecond int `yaml:"global_per_second" json:"global_per_second"`
+	DomainPerMinute int `yaml:"domain_per_minute" json:"domain_per_minute"`
+	IPPerMinute     int `yaml:"ip_per_minute" json:"ip_per_minute"`
+	UserPerMinute   int `yaml:"user_per_minute" json:"user_per_minute"`
+
 	// Burst allowances
-	GlobalBurst        int           `yaml:"global_burst" json:"global_burst"`
-	DomainBurst        int           `yaml:"domain_burst" json:"domain_burst"`
-	IPBurst           int           `yaml:"ip_burst" json:"ip_burst"`
-	UserBurst         int           `yaml:"user_burst" json:"user_burst"`
-	
+	GlobalBurst int `yaml:"global_burst" json:"global_burst"`
+	DomainBurst int `yaml:"domain_burst" json:"domain_burst"`
+	IPBurst     int `yaml:"ip_burst" json:"ip_burst"`
+	UserBurst   int `yaml:"user_burst" json:"user_burst"`
+
 	// Advanced features
-	EnableAdaptive     bool          `yaml:"enable_adaptive" json:"enable_adaptive"`
-	EnableBackpressure bool          `yaml:"enable_backpressure" json:"enable_backpressure"`
-	BurstMultiplier    float64       `yaml:"burst_multiplier" json:"burst_multiplier"`
-	
+	EnableAdaptive     bool    `yaml:"enable_adaptive" json:"enable_adaptive"`
+	EnableBackpressure bool    `yaml:"enable_backpressure" json:"enable_backpressure"`
+	BurstMultiplier    float64 `yaml:"burst_multiplier" json:"burst_multiplier"`
+
 	// Window settings
-	CleanupInterval    time.Duration `yaml:"cleanup_interval" json:"cleanup_interval"`
-	LimiterTTL         time.Duration `yaml:"limiter_ttl" json:"limiter_ttl"`
-	
+	CleanupInterval time.Duration `yaml:"cleanup_interval" json:"cleanup_interval"`
+	LimiterTTL      time.Duration `yaml:"limiter_ttl" json:"limiter_ttl"`
+
 	// Priority settings
-	EnablePriority     bool          `yaml:"enable_priority" json:"enable_priority"`
-	HighPriorityRatio  float64       `yaml:"high_priority_ratio" json:"high_priority_ratio"`
-	
+	EnablePriority    bool    `yaml:"enable_priority" json:"enable_priority"`
+	HighPriorityRatio float64 `yaml:"high_priority_ratio" json:"high_priority_ratio"`
+
 	// Backoff settings
 	EnableExponentialBackoff bool          `yaml:"enable_exponential_backoff" json:"enable_exponential_backoff"`
-	InitialBackoff          time.Duration `yaml:"initial_backoff" json:"initial_backoff"`
-	MaxBackoff              time.Duration `yaml:"max_backoff" json:"max_backoff"`
-	BackoffMultiplier       float64       `yaml:"backoff_multiplier" json:"backoff_multiplier"`
+	InitialBackoff           time.Duration `yaml:"initial_backoff" json:"initial_backoff"`
+	MaxBackoff               time.Duration `yaml:"max_backoff" json:"max_backoff"`
+	BackoffMultiplier        float64       `yaml:"backoff_multiplier" json:"backoff_multiplier"`
 }
 
 // GetDefaultEnhancedRateLimitConfig returns a secure default configuration
 func GetDefaultEnhancedRateLimitConfig() EnhancedRateLimitConfig {
 	return EnhancedRateLimitConfig{
 		// Basic limits - more restrictive for security
-		GlobalPerSecond: 50,   // 50 requests per second globally
-		DomainPerMinute: 10,   // 10 requests per minute per domain
-		IPPerMinute:     30,   // 30 requests per minute per IP
-		UserPerMinute:   20,   // 20 requests per minute per user
-		
+		GlobalPerSecond: 50, // 50 requests per second globally
+		DomainPerMinute: 10, // 10 requests per minute per domain
+		IPPerMinute:     30, // 30 requests per minute per IP
+		UserPerMinute:   20, // 20 requests per minute per user
+
 		// Burst allowances - allow some spikes
-		GlobalBurst: 100,      // Allow burst of 100 globally
-		DomainBurst: 3,        // Allow burst of 3 per domain
-		IPBurst:     10,       // Allow burst of 10 per IP
-		UserBurst:   5,        // Allow burst of 5 per user
-		
+		GlobalBurst: 100, // Allow burst of 100 globally
+		DomainBurst: 3,   // Allow burst of 3 per domain
+		IPBurst:     10,  // Allow burst of 10 per IP
+		UserBurst:   5,   // Allow burst of 5 per user
+
 		// Advanced features
 		EnableAdaptive:     true,
 		EnableBackpressure: true,
 		BurstMultiplier:    1.5,
-		
+
 		// Cleanup settings
 		CleanupInterval: 5 * time.Minute,
 		LimiterTTL:      30 * time.Minute,
-		
+
 		// Priority settings
 		EnablePriority:    true,
 		HighPriorityRatio: 0.3, // 30% of capacity reserved for high priority
-		
+
 		// Backoff settings
 		EnableExponentialBackoff: true,
-		InitialBackoff:          100 * time.Millisecond,
-		MaxBackoff:              30 * time.Second,
-		BackoffMultiplier:       2.0,
+		InitialBackoff:           100 * time.Millisecond,
+		MaxBackoff:               30 * time.Second,
+		BackoffMultiplier:        2.0,
 	}
 }
 
@@ -99,48 +99,48 @@ func (p RequestPriority) String() string {
 	case PriorityCritical:
 		return "critical"
 	default:
-		return "unknown"
+		return unknownState
 	}
 }
 
 // RateLimitRequest represents a rate limit check request
 type RateLimitRequest struct {
-	Domain     string
-	IPAddress  string
-	UserID     string
-	Priority   RequestPriority
-	Operation  string
-	Context    context.Context
+	Domain    string
+	IPAddress string
+	UserID    string
+	Priority  RequestPriority
+	Operation string
+	Context   context.Context
 }
 
 // RateLimitResult represents the result of a rate limit check
 type RateLimitResult struct {
-	Allowed      bool
-	Reason       string
-	BackoffTime  time.Duration
-	RetryAfter   time.Duration
+	Allowed       bool
+	Reason        string
+	BackoffTime   time.Duration
+	RetryAfter    time.Duration
 	QueuePosition int
 }
 
 // limiterEntry tracks a rate limiter with metadata
 type limiterEntry struct {
-	limiter    *rate.Limiter
-	lastUsed   time.Time
-	violations int
+	limiter      *rate.Limiter
+	lastUsed     time.Time
+	violations   int
 	backoffUntil time.Time
 }
 
 // EnhancedRateLimiter provides comprehensive rate limiting with advanced features
 type EnhancedRateLimiter struct {
-	config           EnhancedRateLimitConfig
-	globalLimiter    *rate.Limiter
-	domainLimiters   map[string]*limiterEntry
-	ipLimiters       map[string]*limiterEntry
-	userLimiters     map[string]*limiterEntry
-	metrics          *Metrics
-	mutex            sync.RWMutex
-	cleanupTicker    *time.Ticker
-	stopCleanup      chan struct{}
+	config         EnhancedRateLimitConfig
+	globalLimiter  *rate.Limiter
+	domainLimiters map[string]*limiterEntry
+	ipLimiters     map[string]*limiterEntry
+	userLimiters   map[string]*limiterEntry
+	metrics        *Metrics
+	mutex          sync.RWMutex
+	cleanupTicker  *time.Ticker
+	stopCleanup    chan struct{}
 }
 
 // NewEnhancedRateLimiter creates a new enhanced rate limiter
@@ -167,7 +167,7 @@ func NewEnhancedRateLimiter(config EnhancedRateLimitConfig, metrics *Metrics) *E
 // CheckRateLimit performs comprehensive rate limit checking
 func (rl *EnhancedRateLimiter) CheckRateLimit(req RateLimitRequest) RateLimitResult {
 	now := time.Now()
-	
+
 	// Check global rate limit first
 	if !rl.checkGlobalLimit(req, now) {
 		rl.metrics.RateLimiterReject("global", "all", "global_limit_exceeded")
@@ -211,7 +211,7 @@ func (rl *EnhancedRateLimiter) CheckRateLimit(req RateLimitRequest) RateLimitRes
 }
 
 // checkGlobalLimit checks the global rate limit with priority handling
-func (rl *EnhancedRateLimiter) checkGlobalLimit(req RateLimitRequest, now time.Time) bool {
+func (rl *EnhancedRateLimiter) checkGlobalLimit(req RateLimitRequest, _ time.Time) bool {
 	// For critical priority, allow some additional capacity
 	if req.Priority == PriorityCritical {
 		// Always allow critical requests if we have any tokens
@@ -234,7 +234,7 @@ func (rl *EnhancedRateLimiter) checkGlobalLimit(req RateLimitRequest, now time.T
 // checkDomainLimit checks domain-specific rate limit
 func (rl *EnhancedRateLimiter) checkDomainLimit(req RateLimitRequest, now time.Time) RateLimitResult {
 	entry := rl.getDomainLimiter(req.Domain, now)
-	
+
 	// Check if domain is in backoff period
 	if rl.config.EnableExponentialBackoff && now.Before(entry.backoffUntil) {
 		backoffRemaining := entry.backoffUntil.Sub(now)
@@ -249,13 +249,13 @@ func (rl *EnhancedRateLimiter) checkDomainLimit(req RateLimitRequest, now time.T
 	// Check rate limit
 	if !entry.limiter.Allow() {
 		entry.violations++
-		
+
 		// Apply exponential backoff if enabled
 		if rl.config.EnableExponentialBackoff {
 			backoffDuration := rl.calculateBackoffDuration(entry.violations)
 			entry.backoffUntil = now.Add(backoffDuration)
 		}
-		
+
 		return RateLimitResult{
 			Allowed:    false,
 			Reason:     "domain_rate_limit_exceeded",
@@ -266,14 +266,14 @@ func (rl *EnhancedRateLimiter) checkDomainLimit(req RateLimitRequest, now time.T
 	// Reset violations on successful request
 	entry.violations = 0
 	entry.backoffUntil = time.Time{}
-	
+
 	return RateLimitResult{Allowed: true}
 }
 
 // checkIPLimit checks IP-specific rate limit
 func (rl *EnhancedRateLimiter) checkIPLimit(req RateLimitRequest, now time.Time) RateLimitResult {
 	entry := rl.getIPLimiter(req.IPAddress, now)
-	
+
 	// Check if IP is in backoff period
 	if rl.config.EnableExponentialBackoff && now.Before(entry.backoffUntil) {
 		backoffRemaining := entry.backoffUntil.Sub(now)
@@ -288,13 +288,13 @@ func (rl *EnhancedRateLimiter) checkIPLimit(req RateLimitRequest, now time.Time)
 	// Check rate limit
 	if !entry.limiter.Allow() {
 		entry.violations++
-		
+
 		// Apply exponential backoff if enabled
 		if rl.config.EnableExponentialBackoff {
 			backoffDuration := rl.calculateBackoffDuration(entry.violations)
 			entry.backoffUntil = now.Add(backoffDuration)
 		}
-		
+
 		return RateLimitResult{
 			Allowed:    false,
 			Reason:     "ip_rate_limit_exceeded",
@@ -305,14 +305,14 @@ func (rl *EnhancedRateLimiter) checkIPLimit(req RateLimitRequest, now time.Time)
 	// Reset violations on successful request
 	entry.violations = 0
 	entry.backoffUntil = time.Time{}
-	
+
 	return RateLimitResult{Allowed: true}
 }
 
 // checkUserLimit checks user-specific rate limit
 func (rl *EnhancedRateLimiter) checkUserLimit(req RateLimitRequest, now time.Time) RateLimitResult {
 	entry := rl.getUserLimiter(req.UserID, now)
-	
+
 	// Check if user is in backoff period
 	if rl.config.EnableExponentialBackoff && now.Before(entry.backoffUntil) {
 		backoffRemaining := entry.backoffUntil.Sub(now)
@@ -327,13 +327,13 @@ func (rl *EnhancedRateLimiter) checkUserLimit(req RateLimitRequest, now time.Tim
 	// Check rate limit
 	if !entry.limiter.Allow() {
 		entry.violations++
-		
+
 		// Apply exponential backoff if enabled
 		if rl.config.EnableExponentialBackoff {
 			backoffDuration := rl.calculateBackoffDuration(entry.violations)
 			entry.backoffUntil = now.Add(backoffDuration)
 		}
-		
+
 		return RateLimitResult{
 			Allowed:    false,
 			Reason:     "user_rate_limit_exceeded",
@@ -344,7 +344,7 @@ func (rl *EnhancedRateLimiter) checkUserLimit(req RateLimitRequest, now time.Tim
 	// Reset violations on successful request
 	entry.violations = 0
 	entry.backoffUntil = time.Time{}
-	
+
 	return RateLimitResult{Allowed: true}
 }
 
@@ -360,7 +360,7 @@ func (rl *EnhancedRateLimiter) getDomainLimiter(domain string, now time.Time) *l
 
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
-	
+
 	// Double-check after acquiring write lock
 	if entry, exists := rl.domainLimiters[domain]; exists {
 		entry.lastUsed = now
@@ -377,10 +377,10 @@ func (rl *EnhancedRateLimiter) getDomainLimiter(domain string, now time.Time) *l
 		limiter:  rate.NewLimiter(perMinute, rl.config.DomainBurst),
 		lastUsed: now,
 	}
-	
+
 	rl.domainLimiters[domain] = entry
 	rl.metrics.RateLimiterBacklog("domain", domain, float64(len(rl.domainLimiters)))
-	
+
 	return entry
 }
 
@@ -396,7 +396,7 @@ func (rl *EnhancedRateLimiter) getIPLimiter(ip string, now time.Time) *limiterEn
 
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
-	
+
 	// Double-check after acquiring write lock
 	if entry, exists := rl.ipLimiters[ip]; exists {
 		entry.lastUsed = now
@@ -413,10 +413,10 @@ func (rl *EnhancedRateLimiter) getIPLimiter(ip string, now time.Time) *limiterEn
 		limiter:  rate.NewLimiter(perMinute, rl.config.IPBurst),
 		lastUsed: now,
 	}
-	
+
 	rl.ipLimiters[ip] = entry
 	rl.metrics.RateLimiterBacklog("ip", ip, float64(len(rl.ipLimiters)))
-	
+
 	return entry
 }
 
@@ -432,7 +432,7 @@ func (rl *EnhancedRateLimiter) getUserLimiter(userID string, now time.Time) *lim
 
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
-	
+
 	// Double-check after acquiring write lock
 	if entry, exists := rl.userLimiters[userID]; exists {
 		entry.lastUsed = now
@@ -449,10 +449,10 @@ func (rl *EnhancedRateLimiter) getUserLimiter(userID string, now time.Time) *lim
 		limiter:  rate.NewLimiter(perMinute, rl.config.UserBurst),
 		lastUsed: now,
 	}
-	
+
 	rl.userLimiters[userID] = entry
 	rl.metrics.RateLimiterBacklog("user", userID, float64(len(rl.userLimiters)))
-	
+
 	return entry
 }
 
@@ -470,7 +470,7 @@ func (rl *EnhancedRateLimiter) calculateBackoffDuration(violations int) time.Dur
 			break
 		}
 	}
-	
+
 	return backoff
 }
 
@@ -551,19 +551,19 @@ func (rl *EnhancedRateLimiter) GetStats() EnhancedRateLimiterStats {
 	defer rl.mutex.RUnlock()
 
 	return EnhancedRateLimiterStats{
-		GlobalTokens:     rl.globalLimiter.Tokens(),
-		DomainLimiters:   len(rl.domainLimiters),
-		IPLimiters:       len(rl.ipLimiters),
-		UserLimiters:     len(rl.userLimiters),
-		Config:           rl.config,
+		GlobalTokens:   rl.globalLimiter.Tokens(),
+		DomainLimiters: len(rl.domainLimiters),
+		IPLimiters:     len(rl.ipLimiters),
+		UserLimiters:   len(rl.userLimiters),
+		Config:         rl.config,
 	}
 }
 
 // EnhancedRateLimiterStats represents statistics for the enhanced rate limiter
 type EnhancedRateLimiterStats struct {
-	GlobalTokens   float64                     `json:"global_tokens"`
-	DomainLimiters int                         `json:"domain_limiters"`
-	IPLimiters     int                         `json:"ip_limiters"`
-	UserLimiters   int                         `json:"user_limiters"`
-	Config         EnhancedRateLimitConfig     `json:"config"`
+	GlobalTokens   float64                 `json:"global_tokens"`
+	DomainLimiters int                     `json:"domain_limiters"`
+	IPLimiters     int                     `json:"ip_limiters"`
+	UserLimiters   int                     `json:"user_limiters"`
+	Config         EnhancedRateLimitConfig `json:"config"`
 }

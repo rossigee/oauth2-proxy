@@ -49,14 +49,14 @@ func (w *WellKnownDiscovery) DiscoverProvider(domain string) (*ProviderInfo, err
 		fmt.Sprintf("https://%s/.well-known/oauth2-proxy-oidc", domain),
 		fmt.Sprintf("http://%s/.well-known/oauth2-proxy-oidc", domain),
 	}
-	
+
 	for _, url := range urls {
 		info, err := w.fetchProviderInfo(url)
 		if err == nil && info != nil {
 			return info, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("no valid OIDC provider information found via well-known endpoints for domain %s", domain)
 }
 
@@ -64,40 +64,40 @@ func (w *WellKnownDiscovery) DiscoverProvider(domain string) (*ProviderInfo, err
 func (w *WellKnownDiscovery) fetchProviderInfo(url string) (*ProviderInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
 	defer cancel()
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
-	
+
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "oauth2-proxy/discovery")
-	
+
 	resp, err := w.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP request returned status %d", resp.StatusCode)
 	}
-	
+
 	var wellKnownResp WellKnownResponse
 	if err := json.NewDecoder(resp.Body).Decode(&wellKnownResp); err != nil {
 		return nil, fmt.Errorf("failed to decode JSON response: %v", err)
 	}
-	
+
 	// Validate response
 	if wellKnownResp.IssuerURL == "" {
 		return nil, fmt.Errorf("missing issuer URL in well-known response")
 	}
-	
+
 	providerType := wellKnownResp.ProviderType
 	if providerType == "" {
 		providerType = "oidc" // Default to OIDC
 	}
-	
+
 	return &ProviderInfo{
 		IssuerURL:    wellKnownResp.IssuerURL,
 		ProviderType: providerType,

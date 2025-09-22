@@ -132,7 +132,7 @@ func TestWellKnownDiscovery(t *testing.T) {
 	t.Run("set timeout", func(t *testing.T) {
 		newTimeout := 3 * time.Second
 		discovery.SetTimeout(newTimeout)
-		
+
 		if discovery.timeout != newTimeout {
 			t.Errorf("Expected timeout %v, got: %v", newTimeout, discovery.timeout)
 		}
@@ -148,7 +148,7 @@ func TestWellKnownDiscoveryIntegration(t *testing.T) {
 	// external network calls in unit tests
 	t.Run("discover unknown domain", func(t *testing.T) {
 		discovery := NewWellKnownDiscovery()
-		
+
 		// This should fail for a non-existent domain
 		_, err := discovery.DiscoverProvider("nonexistent-domain-for-testing.invalid")
 		if err == nil {

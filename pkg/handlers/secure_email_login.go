@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -12,17 +14,22 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
 )
 
+// Context key for request ID
+type secureEmailContextKey string
+
+const requestIDKey secureEmailContextKey = "request_id"
+
 // SecureEmailLoginHandler provides a hardened email login handler with security controls
 type SecureEmailLoginHandler struct {
-	providerFactory    *discovery.ProviderFactory
-	template           *template.Template
-	fallbackURL        string
-	validator          *discovery.SecureEmailValidator
-	rateLimiter        *discovery.RateLimiter
-	csrf               *CSRFProtection
-	allowedRedirects   []string
-	sessionManager     SessionManager
-	auditLogger        AuditLogger
+	providerFactory  *discovery.ProviderFactory
+	template         *template.Template
+	fallbackURL      string
+	validator        *discovery.SecureEmailValidator
+	rateLimiter      *discovery.RateLimiter
+	csrf             *CSRFProtection
+	allowedRedirects []string
+	sessionManager   SessionManager
+	auditLogger      AuditLogger
 }
 
 // SecureEmailLoginData represents secure data passed to the email login template
@@ -64,13 +71,13 @@ type SecurityViolationEvent struct {
 
 // AuthenticationEvent represents an authentication attempt
 type AuthenticationEvent struct {
-	Timestamp   time.Time `json:"timestamp"`
-	EmailHash   string    `json:"email_hash"`
-	Success     bool      `json:"success"`
-	Method      string    `json:"method"`
-	IPAddress   string    `json:"ip_address"`
-	UserAgent   string    `json:"user_agent"`
-	RequestID   string    `json:"request_id"`
+	Timestamp time.Time `json:"timestamp"`
+	EmailHash string    `json:"email_hash"`
+	Success   bool      `json:"success"`
+	Method    string    `json:"method"`
+	IPAddress string    `json:"ip_address"`
+	UserAgent string    `json:"user_agent"`
+	RequestID string    `json:"request_id"`
 }
 
 // NewSecureEmailLoginHandler creates a new secure email login handler
@@ -111,7 +118,7 @@ func NewSecureEmailLoginHandler(
 func (h *SecureEmailLoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Generate request ID for audit trail
 	requestID := generateRequestID()
-	r = r.WithContext(context.WithValue(r.Context(), "request_id", requestID))
+	r = r.WithContext(context.WithValue(r.Context(), requestIDKey, requestID))
 
 	// Security headers
 	h.setSecurityHeaders(w)
@@ -173,7 +180,7 @@ func (h *SecureEmailLoginHandler) handleGetEmailFormSecure(w http.ResponseWriter
 	// Validate and sanitize email parameter
 	if data.Email != "" {
 		if err := h.validator.ValidateEmail(data.Email); err != nil {
-			h.logSecurityViolation(r, "invalid_email_parameter", 
+			h.logSecurityViolation(r, "invalid_email_parameter",
 				"Invalid email in URL parameter: "+err.Error(), "medium")
 			data.Email = "" // Clear invalid email
 			data.Error = "Invalid email format"
@@ -222,7 +229,7 @@ func (h *SecureEmailLoginHandler) handlePostEmailFormSecure(w http.ResponseWrite
 
 	// Comprehensive email validation
 	if err := h.validator.ValidateEmail(email); err != nil {
-		h.logSecurityViolation(r, "email_validation_failed", 
+		h.logSecurityViolation(r, "email_validation_failed",
 			"Email validation failed for "+discovery.HashEmail(email)+": "+err.Error(), "medium")
 		h.redirectWithError(w, r, "Invalid email address format")
 		return
@@ -258,7 +265,7 @@ func (h *SecureEmailLoginHandler) handlePostEmailFormSecure(w http.ResponseWrite
 	// Discover provider
 	providerInfo, err := h.providerFactory.GetProviderInfoForEmail(email)
 	if err != nil {
-		logger.Printf("Provider discovery failed for email hash %s: %v", 
+		logger.Printf("Provider discovery failed for email hash %s: %v",
 			discovery.HashEmail(email), err)
 		h.redirectWithError(w, r, "Unable to find identity provider for your email domain")
 		return
@@ -272,7 +279,7 @@ func (h *SecureEmailLoginHandler) handlePostEmailFormSecure(w http.ResponseWrite
 	}
 
 	// Log successful discovery
-	logger.Printf("Successfully discovered provider for email hash %s: %s", 
+	logger.Printf("Successfully discovered provider for email hash %s: %s",
 		discovery.HashEmail(email), providerInfo.ProviderType)
 
 	// Validate and prepare redirect URL
@@ -296,7 +303,7 @@ func (h *SecureEmailLoginHandler) handlePostEmailFormSecure(w http.ResponseWrite
 
 	finalURL := oauthStartURL + "?" + params.Encode()
 	logger.Printf("Redirecting to OAuth start for email hash %s", discovery.HashEmail(email))
-	
+
 	// Update audit log with success
 	h.auditLogger.LogAuthenticationEvent(AuthenticationEvent{
 		Timestamp: time.Now(),
@@ -344,18 +351,39 @@ func (h *SecureEmailLoginHandler) validateRedirectURL(rd string) string {
 	return rd
 }
 
-// generateOAuthState creates a secure OAuth state parameter
+// generateOAuthState creates a secure OAuth state parameter with provider info
 func (h *SecureEmailLoginHandler) generateOAuthState(sessionID, email, redirectURL string) (string, error) {
-	// Implement secure state generation with HMAC
-	// This is a placeholder - implement based on OAuth2 best practices
-	return "secure_state_placeholder", nil
+	// Get provider info for the email domain
+	providerInfo, err := h.providerFactory.GetProviderInfoForEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	// Create state object with provider information
+	stateData := map[string]interface{}{
+		"session_id":    sessionID,
+		"email_hash":    discovery.HashEmail(email),
+		"provider_type": providerInfo.ProviderType,
+		"issuer_url":    providerInfo.IssuerURL,
+		"redirect_url":  redirectURL,
+		"timestamp":     time.Now().Unix(),
+	}
+
+	// Encode as JSON
+	jsonData, err := json.Marshal(stateData)
+	if err != nil {
+		return "", err
+	}
+
+	// Base64 encode for URL safety
+	return base64.URLEncoding.EncodeToString(jsonData), nil
 }
 
 // redirectWithError redirects back to the form with an error message
 func (h *SecureEmailLoginHandler) redirectWithError(w http.ResponseWriter, r *http.Request, errorMsg string) {
 	params := url.Values{}
 	params.Set("error", errorMsg)
-	
+
 	if email := r.Form.Get("email"); email != "" {
 		// Only include email if it passed basic validation
 		if err := h.validator.ValidateEmail(email); err == nil {
@@ -370,15 +398,15 @@ func (h *SecureEmailLoginHandler) redirectWithError(w http.ResponseWriter, r *ht
 // setSecurityHeaders sets security-related HTTP headers
 func (h *SecureEmailLoginHandler) setSecurityHeaders(w http.ResponseWriter) {
 	headers := map[string]string{
-		"X-Content-Type-Options":  "nosniff",
-		"X-Frame-Options":         "DENY",
-		"X-XSS-Protection":        "1; mode=block",
-		"Referrer-Policy":         "strict-origin-when-cross-origin",
-		"Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; form-action 'self';",
+		"X-Content-Type-Options":    "nosniff",
+		"X-Frame-Options":           "DENY",
+		"X-XSS-Protection":          "1; mode=block",
+		"Referrer-Policy":           "strict-origin-when-cross-origin",
+		"Content-Security-Policy":   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; form-action 'self';",
 		"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-		"Cache-Control":           "no-cache, no-store, must-revalidate, max-age=0",
-		"Pragma":                  "no-cache",
-		"Expires":                 "Thu, 01 Jan 1970 00:00:00 GMT",
+		"Cache-Control":             "no-cache, no-store, must-revalidate, max-age=0",
+		"Pragma":                    "no-cache",
+		"Expires":                   "Thu, 01 Jan 1970 00:00:00 GMT",
 	}
 
 	for header, value := range headers {
@@ -399,7 +427,7 @@ func (h *SecureEmailLoginHandler) logSecurityViolation(r *http.Request, violatio
 	}
 
 	h.auditLogger.LogSecurityViolation(event)
-	logger.Warnf("Security violation [%s]: %s from %s", violationType, description, event.IPAddress)
+	logger.Errorf("Security violation [%s]: %s from %s", violationType, description, event.IPAddress)
 }
 
 // Utility functions
@@ -439,7 +467,7 @@ func generateRequestID() string {
 
 // getRequestID retrieves request ID from context
 func getRequestID(r *http.Request) string {
-	if id, ok := r.Context().Value("request_id").(string); ok {
+	if id, ok := r.Context().Value(requestIDKey).(string); ok {
 		return id
 	}
 	return "unknown"

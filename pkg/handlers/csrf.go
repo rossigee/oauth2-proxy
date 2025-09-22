@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -14,15 +14,15 @@ import (
 )
 
 const (
-	CSRFTokenName     = "csrf_token"
-	CSRFCookieName    = "_oauth2_proxy_csrf"
-	CSRFTokenMaxAge   = 15 * time.Minute
-	CSRFCookieMaxAge  = 15 * time.Minute
+	CSRFTokenName    = "csrf_token"
+	CSRFCookieName   = "_oauth2_proxy_csrf"
+	CSRFTokenMaxAge  = 15 * time.Minute
+	CSRFCookieMaxAge = 15 * time.Minute
 )
 
 // CSRFProtection provides CSRF protection for forms
 type CSRFProtection struct {
-	secret    []byte
+	secret     []byte
 	cookieName string
 	tokenName  string
 	maxAge     time.Duration
@@ -164,7 +164,7 @@ func (c *CSRFProtection) ValidateRequest(r *http.Request, sessionID string) erro
 
 // CSRFMiddleware provides CSRF protection middleware
 type CSRFMiddleware struct {
-	csrf      *CSRFProtection
+	csrf        *CSRFProtection
 	exemptPaths []string
 }
 
@@ -207,7 +207,7 @@ func (m *CSRFMiddleware) Handler(next http.Handler) http.Handler {
 			}
 
 			m.csrf.SetTokenCookie(w, token, r.TLS != nil)
-			
+
 			// Add token to request context for template use
 			r = r.WithContext(WithCSRFToken(r.Context(), token))
 
@@ -241,7 +241,7 @@ func (m *CSRFMiddleware) getSessionID(r *http.Request) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	// In a real implementation, you would decrypt/decode the session
 	// and extract the session ID. For now, we use the cookie value as ID.
 	return cookie.Value

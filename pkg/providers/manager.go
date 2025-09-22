@@ -45,7 +45,7 @@ func (m *Manager) GetProviderForEmail(email string) (providers.Provider, error) 
 		return cachedProvider, nil
 	}
 	m.cacheMutex.RUnlock()
-	
+
 	// Cache miss
 	m.metrics.CacheMiss("provider", domain)
 
@@ -133,17 +133,17 @@ func (m *Manager) createProviderFromInfo(info *discovery.ExtendedProviderInfo) (
 func (m *Manager) ClearCache() {
 	m.cacheMutex.Lock()
 	defer m.cacheMutex.Unlock()
-	
+
 	// Track removed providers
 	for _, provider := range m.providerCache {
 		// Get provider type from provider data
 		if providerData := provider.Data(); providerData != nil {
-			// Note: This is a simple approach - in production you might want 
+			// Note: This is a simple approach - in production you might want
 			// to track provider types more explicitly
 			m.metrics.ProviderRemoved("cached_provider")
 		}
 	}
-	
+
 	m.providerCache = make(map[string]providers.Provider)
 }
 
@@ -151,7 +151,7 @@ func (m *Manager) ClearCache() {
 func (m *Manager) GetCachedProviders() map[string]providers.Provider {
 	m.cacheMutex.RLock()
 	defer m.cacheMutex.RUnlock()
-	
+
 	result := make(map[string]providers.Provider)
 	for domain, provider := range m.providerCache {
 		result[domain] = provider

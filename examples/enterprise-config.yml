@@ -1,0 +1,170 @@
+# Enterprise Email Discovery Configuration
+# This example shows comprehensive configuration for enterprise deployments
+
+# Standard OAuth2-Proxy Configuration
+http_address: "0.0.0.0:4180"
+https_address: "0.0.0.0:4443"
+tls_cert_file: "/etc/ssl/certs/oauth2-proxy.crt"
+tls_key_file: "/etc/ssl/private/oauth2-proxy.key"
+
+upstreams: ["http://backend:8080/"]
+cookie_secret: "your-32-char-cookie-secret-here"
+cookie_secure: true
+cookie_httponly: true
+cookie_samesite: "strict"
+cookie_domains: [".company.com"]
+cookie_expire: "24h"
+
+# Email Discovery Configuration
+email_discovery:
+  enabled: true
+  fallback_provider: "none"  # Force email discovery
+  methods: ["config", "dns", "wellknown"]
+  dns_enabled: true
+  wellknown_enabled: true
+  
+  # Enterprise domain mappings
+  domain_providers:
+    # Internal employees
+    - domain: "company.com"
+      provider_type: "oidc"
+      issuer_url: "https://sso.company.com"
+      client_id: "oauth2-proxy-internal"
+      client_secret: "internal-client-secret"
+      scopes: ["openid", "email", "profile", "groups"]
+      
+    # Contractors  
+    - domain: "contractor.com"
+      provider_type: "oidc"
+      issuer_url: "https://contractor-sso.com"
+      client_id: "oauth2-proxy-contractor"
+      client_secret: "contractor-client-secret"
+      scopes: ["openid", "email", "profile"]
+      
+    # Partners
+    - domain: "partner.com"
+      provider_type: "github"
+      client_id: "github-oauth-app-id"
+      client_secret: "github-oauth-secret"
+      org: "partner-org"
+      
+    # External users
+    - domain: "gmail.com"
+      provider_type: "google"
+      client_id: "google-oauth-client-id"
+      client_secret: "google-oauth-secret"
+
+# Enhanced Security Configuration
+security:
+  # Rate limiting for DoS protection
+  rate_limits:
+    global_per_second: 100
+    domain_per_minute: 50
+    ip_per_minute: 100
+    user_per_minute: 50
+    
+    # Burst allowances
+    global_burst: 200
+    domain_burst: 10
+    ip_burst: 50
+    user_burst: 20
+    
+    # Priority handling
+    enable_priority: true
+    high_priority_ratio: 0.2
+    
+    # Exponential backoff
+    enable_exponential_backoff: true
+    initial_backoff: "500ms"
+    max_backoff: "60s"
+    backoff_multiplier: 2.0
+    
+    # Cleanup
+    cleanup_interval: "10m"
+    limiter_ttl: "1h"
+  
+  # Circuit breakers for reliability
+  circuit_breaker:
+    failure_threshold: 10
+    success_threshold: 5
+    timeout: "60s"
+    max_requests: 10
+    reset_timeout: "300s"
+    
+  # Input validation
+  validation:
+    require_verification: true
+    audit_logging: true
+    max_email_length: 254
+    max_domain_length: 253
+    blocked_domains:
+      - ".*\\.local$"
+      - ".*\\.localhost$"
+      - ".*\\.internal$"
+      - ".*\\.test$"
+
+# Reliability Configuration
+reliability:
+  # Timeouts
+  default_timeout: "30s"
+  discovery_timeout: "10s"
+  dns_timeout: "5s"
+  http_timeout: "15s"
+  
+  # Retry logic
+  enable_retry: true
+  max_retries: 3
+  retry_delay: "2s"
+  retry_backoff: 2.0
+  
+  # Health monitoring
+  enable_health_check: true
+  health_check_interval: "60s"
+  health_threshold: 5
+  
+  # Metrics collection
+  enable_monitoring: true
+  metrics_interval: "30s"
+
+# Logging Configuration
+logging:
+  level: "info"
+  format: "json"
+  audit_enabled: true
+  audit_file: "/var/log/oauth2-proxy/audit.log"
+
+# Metrics Configuration  
+metrics_address: "0.0.0.0:9090"
+prometheus_metrics: true
+
+# Session Configuration
+session_store_type: "redis"
+redis_connection_url: "redis://redis:6379"
+redis_password: "redis-password"
+redis_sentinel_master_name: "oauth2-proxy"
+
+# Additional Security Headers
+set_xauthrequest: true
+set_authorization_header: true
+pass_authorization_header: true
+pass_access_token: true
+pass_user_headers: true
+
+# CSRF Protection
+csrf_protection: true
+csrf_per_request: true
+
+# Request signing
+signature_key: "your-signature-key-here"
+
+# Upstream configuration
+flush_interval: "1s"
+request_timeout: "30s"
+
+# TLS Configuration
+tls_min_version: "1.2"
+tls_cipher_suites:
+  - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+  - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+  - "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+  - "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305"

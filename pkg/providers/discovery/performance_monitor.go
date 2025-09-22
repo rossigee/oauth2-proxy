@@ -33,9 +33,9 @@ func NewPerformanceMonitor(config PerformanceConfig) *PerformanceMonitor {
 	if config.MonitoringInterval == 0 {
 		config.MonitoringInterval = 30 * time.Second
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &PerformanceMonitor{
 		metrics:  GetMetrics(),
 		ctx:      ctx,
@@ -48,14 +48,14 @@ func NewPerformanceMonitor(config PerformanceConfig) *PerformanceMonitor {
 func (pm *PerformanceMonitor) Start() error {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
-	
+
 	if pm.running {
 		return nil
 	}
-	
+
 	pm.running = true
 	go pm.monitorLoop()
-	
+
 	logger.Printf("Performance monitor started with interval %v", pm.interval)
 	return nil
 }
@@ -64,14 +64,14 @@ func (pm *PerformanceMonitor) Start() error {
 func (pm *PerformanceMonitor) Stop() error {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
-	
+
 	if !pm.running {
 		return nil
 	}
-	
+
 	pm.cancel()
 	pm.running = false
-	
+
 	logger.Printf("Performance monitor stopped")
 	return nil
 }
@@ -87,10 +87,10 @@ func (pm *PerformanceMonitor) IsRunning() bool {
 func (pm *PerformanceMonitor) monitorLoop() {
 	ticker := time.NewTicker(pm.interval)
 	defer ticker.Stop()
-	
+
 	// Collect initial baseline
 	pm.collectMetrics()
-	
+
 	for {
 		select {
 		case <-pm.ctx.Done():
@@ -106,18 +106,18 @@ func (pm *PerformanceMonitor) collectMetrics() {
 	// Collect memory statistics
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
-	
+
 	// Update memory usage metrics
 	pm.metrics.UpdateMemoryUsage(float64(memStats.Alloc))
-	
+
 	// Update goroutine count
 	pm.metrics.UpdateGoroutineCount(float64(runtime.NumGoroutine()))
-	
+
 	// Log performance metrics periodically (every 5 minutes)
 	if pm.shouldLogMetrics() {
 		pm.logPerformanceMetrics(&memStats)
 	}
-	
+
 	pm.lastMemStats = memStats
 }
 
@@ -130,15 +130,16 @@ func (pm *PerformanceMonitor) shouldLogMetrics() bool {
 // logPerformanceMetrics logs current performance state
 func (pm *PerformanceMonitor) logPerformanceMetrics(memStats *runtime.MemStats) {
 	logger.Printf("Email Discovery Performance Metrics:")
-	logger.Printf("  Memory Allocated: %d bytes (%.2f MB)", 
+	logger.Printf("  Memory Allocated: %d bytes (%.2f MB)",
 		memStats.Alloc, float64(memStats.Alloc)/1024/1024)
 	logger.Printf("  Heap Objects: %d", memStats.HeapObjects)
 	logger.Printf("  Goroutines: %d", runtime.NumGoroutine())
 	logger.Printf("  GC Cycles: %d", memStats.NumGC)
-	
+
 	if pm.lastMemStats.NumGC > 0 {
-		logger.Printf("  GC Pause (last): %v", 
-			time.Duration(memStats.PauseNs[(memStats.NumGC+255)%256]))
+		logger.Printf("  GC Pause (last): %v",
+			//nolint:gosec // Safe bounded conversion
+			time.Duration(int64(memStats.PauseNs[(memStats.NumGC+255)%256]&0x7FFFFFFFFFFFFFFF)))
 	}
 }
 
@@ -146,14 +147,16 @@ func (pm *PerformanceMonitor) logPerformanceMetrics(memStats *runtime.MemStats) 
 func (pm *PerformanceMonitor) GetStats() PerformanceStats {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
-	
+
 	return PerformanceStats{
 		MemoryAllocated: memStats.Alloc,
 		HeapObjects:     memStats.HeapObjects,
-		Goroutines:      uint64(runtime.NumGoroutine()),
-		GCCycles:        memStats.NumGC,
-		LastGCPause:     time.Duration(memStats.PauseNs[(memStats.NumGC+255)%256]),
-		Timestamp:       time.Now(),
+		//nolint:gosec // Safe bounded conversion
+		Goroutines: uint64(max(0, min(runtime.NumGoroutine(), 1000000))),
+		GCCycles:   memStats.NumGC,
+		//nolint:gosec // Safe bounded conversion
+		LastGCPause: time.Duration(int64(memStats.PauseNs[(memStats.NumGC+255)%256] & 0x7FFFFFFFFFFFFFFF)),
+		Timestamp:   time.Now(),
 	}
 }
 
@@ -180,8 +183,8 @@ type PerformanceThresholds struct {
 // DefaultPerformanceThresholds returns sensible default thresholds
 func DefaultPerformanceThresholds() PerformanceThresholds {
 	return PerformanceThresholds{
-		MaxMemoryMB:   100,  // 100MB
-		MaxGoroutines: 1000, // 1000 goroutines
+		MaxMemoryMB:   100,                   // 100MB
+		MaxGoroutines: 1000,                  // 1000 goroutines
 		MaxGCPause:    10 * time.Millisecond, // 10ms GC pause
 	}
 }
@@ -190,26 +193,26 @@ func DefaultPerformanceThresholds() PerformanceThresholds {
 func (pm *PerformanceMonitor) CheckThresholds(thresholds PerformanceThresholds) []string {
 	stats := pm.GetStats()
 	var alerts []string
-	
+
 	// Check memory usage
 	memoryMB := float64(stats.MemoryAllocated) / 1024 / 1024
 	if memoryMB > thresholds.MaxMemoryMB {
-		alerts = append(alerts, 
+		alerts = append(alerts,
 			"High memory usage: %.2f MB (threshold: %.2f MB)")
 	}
-	
+
 	// Check goroutine count
-	if int(stats.Goroutines) > thresholds.MaxGoroutines {
-		alerts = append(alerts, 
+	if thresholds.MaxGoroutines > 0 && stats.Goroutines > uint64(thresholds.MaxGoroutines) {
+		alerts = append(alerts,
 			"High goroutine count: %d (threshold: %d)")
 	}
-	
+
 	// Check GC pause time
 	if stats.LastGCPause > thresholds.MaxGCPause {
-		alerts = append(alerts, 
+		alerts = append(alerts,
 			"High GC pause: %v (threshold: %v)")
 	}
-	
+
 	return alerts
 }
 
@@ -234,10 +237,10 @@ func NewResourceUsage(maxAge time.Duration, maxCount int) *ResourceUsage {
 func (ru *ResourceUsage) AddSample(stats PerformanceStats) {
 	ru.mu.Lock()
 	defer ru.mu.Unlock()
-	
+
 	// Add new sample
 	ru.samples = append(ru.samples, stats)
-	
+
 	// Remove old samples
 	cutoff := time.Now().Add(-ru.maxAge)
 	for i, sample := range ru.samples {
@@ -246,7 +249,7 @@ func (ru *ResourceUsage) AddSample(stats PerformanceStats) {
 			break
 		}
 	}
-	
+
 	// Limit total count
 	if len(ru.samples) > ru.maxCount {
 		ru.samples = ru.samples[len(ru.samples)-ru.maxCount:]
@@ -257,15 +260,15 @@ func (ru *ResourceUsage) AddSample(stats PerformanceStats) {
 func (ru *ResourceUsage) GetAverages() PerformanceStats {
 	ru.mu.RLock()
 	defer ru.mu.RUnlock()
-	
+
 	if len(ru.samples) == 0 {
 		return PerformanceStats{}
 	}
-	
+
 	var totalMem, totalObjects, totalGoroutines uint64
 	var totalGCCycles uint32
 	var totalGCPause time.Duration
-	
+
 	for _, sample := range ru.samples {
 		totalMem += sample.MemoryAllocated
 		totalObjects += sample.HeapObjects
@@ -273,15 +276,17 @@ func (ru *ResourceUsage) GetAverages() PerformanceStats {
 		totalGCCycles += sample.GCCycles
 		totalGCPause += sample.LastGCPause
 	}
-	
+
 	count := uint64(len(ru.samples))
 	return PerformanceStats{
 		MemoryAllocated: totalMem / count,
 		HeapObjects:     totalObjects / count,
 		Goroutines:      totalGoroutines / count,
-		GCCycles:        uint32(uint64(totalGCCycles) / count),
-		LastGCPause:     totalGCPause / time.Duration(count),
-		Timestamp:       time.Now(),
+		//nolint:gosec // Safe bounded conversion
+		GCCycles: uint32(min(uint64(totalGCCycles), 4294967295) / max(count, 1)),
+		//nolint:gosec // Safe bounded conversion
+		LastGCPause: totalGCPause / time.Duration(max(int64(count), 1)),
+		Timestamp:   time.Now(),
 	}
 }
 
@@ -289,15 +294,15 @@ func (ru *ResourceUsage) GetAverages() PerformanceStats {
 func (ru *ResourceUsage) GetPeaks() PerformanceStats {
 	ru.mu.RLock()
 	defer ru.mu.RUnlock()
-	
+
 	if len(ru.samples) == 0 {
 		return PerformanceStats{}
 	}
-	
+
 	var maxMem, maxObjects, maxGoroutines uint64
 	var maxGCCycles uint32
 	var maxGCPause time.Duration
-	
+
 	for _, sample := range ru.samples {
 		if sample.MemoryAllocated > maxMem {
 			maxMem = sample.MemoryAllocated
@@ -315,7 +320,7 @@ func (ru *ResourceUsage) GetPeaks() PerformanceStats {
 			maxGCPause = sample.LastGCPause
 		}
 	}
-	
+
 	return PerformanceStats{
 		MemoryAllocated: maxMem,
 		HeapObjects:     maxObjects,

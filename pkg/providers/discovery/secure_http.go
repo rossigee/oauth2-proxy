@@ -38,10 +38,10 @@ func NewSecureHTTPClient(allowedDomains []string, timeout time.Duration) *Secure
 				tls.X25519,
 			},
 		},
-		DisableKeepAlives:     true,  // Prevent connection reuse
-		MaxIdleConns:          0,     // No connection pooling
-		IdleConnTimeout:       0,     // Immediate cleanup
-		DisableCompression:    true,  // Prevent compression attacks
+		DisableKeepAlives:     true, // Prevent connection reuse
+		MaxIdleConns:          0,    // No connection pooling
+		IdleConnTimeout:       0,    // Immediate cleanup
+		DisableCompression:    true, // Prevent compression attacks
 		TLSHandshakeTimeout:   10 * time.Second,
 		ResponseHeaderTimeout: 10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
@@ -50,7 +50,7 @@ func NewSecureHTTPClient(allowedDomains []string, timeout time.Duration) *Secure
 	client := &http.Client{
 		Transport: tr,
 		Timeout:   timeout,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 			// Prevent any redirects to avoid redirect-based attacks
 			return http.ErrUseLastResponse
 		},
@@ -193,21 +193,21 @@ func (c *SecureHTTPClient) isDomainAllowed(domain string) bool {
 }
 
 // parseProviderInfoFromJSON parses provider information from JSON response
-func parseProviderInfoFromJSON(body io.ReadCloser) (*ProviderInfo, error) {
+func parseProviderInfoFromJSON(_ io.ReadCloser) (*ProviderInfo, error) {
 	// This is a placeholder - implement JSON parsing with security controls
 	// TODO: Implement secure JSON parsing with:
 	// - Schema validation
 	// - Maximum depth limits
 	// - Field validation
 	// - No unsafe unmarshaling
-	
+
 	return nil, fmt.Errorf("JSON parsing not yet implemented")
 }
 
 // SecureWellKnownDiscovery provides secure well-known endpoint discovery
 type SecureWellKnownDiscovery struct {
-	httpClient *SecureHTTPClient
-	validator  *SecureEmailValidator
+	httpClient  *SecureHTTPClient
+	validator   *SecureEmailValidator
 	rateLimiter *RateLimiter
 }
 

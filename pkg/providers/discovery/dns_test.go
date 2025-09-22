@@ -58,7 +58,7 @@ func TestExtractDomainFromEmail(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ExtractDomainFromEmail(tt.email)
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error but got none")
@@ -135,7 +135,7 @@ func TestIsValidDomain(t *testing.T) {
 
 func TestParseTXTRecord(t *testing.T) {
 	dns := NewDNSDiscovery()
-	
+
 	tests := []struct {
 		name        string
 		record      string
@@ -193,7 +193,7 @@ func TestParseTXTRecord(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := dns.parseTXTRecord(tt.record)
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error but got none")
@@ -202,20 +202,20 @@ func TestParseTXTRecord(t *testing.T) {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				}
-				
+
 				if result == nil {
 					t.Errorf("Expected result but got nil")
 					return
 				}
-				
+
 				if result.IssuerURL != tt.expected.IssuerURL {
 					t.Errorf("Expected IssuerURL %s, got %s", tt.expected.IssuerURL, result.IssuerURL)
 				}
-				
+
 				if result.ProviderType != tt.expected.ProviderType {
 					t.Errorf("Expected ProviderType %s, got %s", tt.expected.ProviderType, result.ProviderType)
 				}
-				
+
 				if result.ClientID != tt.expected.ClientID {
 					t.Errorf("Expected ClientID %s, got %s", tt.expected.ClientID, result.ClientID)
 				}
