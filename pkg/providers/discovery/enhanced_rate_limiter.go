@@ -212,12 +212,10 @@ func (rl *EnhancedRateLimiter) CheckRateLimit(req RateLimitRequest) RateLimitRes
 
 // checkGlobalLimit checks the global rate limit with priority handling
 func (rl *EnhancedRateLimiter) checkGlobalLimit(req RateLimitRequest, _ time.Time) bool {
-	// For critical priority, allow some additional capacity
+	// For critical priority, try to allow if possible
 	if req.Priority == PriorityCritical {
-		// Always allow critical requests if we have any tokens
-		if rl.globalLimiter.Tokens() > 0 {
-			return rl.globalLimiter.Allow()
-		}
+		// Always try to allow critical requests
+		return rl.globalLimiter.Allow()
 	}
 
 	// For high priority, reserve some capacity
@@ -226,6 +224,7 @@ func (rl *EnhancedRateLimiter) checkGlobalLimit(req RateLimitRequest, _ time.Tim
 		if rl.globalLimiter.Tokens() > reservedCapacity {
 			return rl.globalLimiter.Allow()
 		}
+		return false
 	}
 
 	return rl.globalLimiter.Allow()

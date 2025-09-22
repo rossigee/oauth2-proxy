@@ -122,8 +122,11 @@ func TestEnhancedRateLimiterGlobalLimits(t *testing.T) {
 		GlobalPerSecond: 1000, // Very high rate
 		GlobalBurst:     2,    // But low burst
 		DomainPerMinute: 100,  // High enough not to interfere
+		DomainBurst:     10,   // High enough not to interfere
 		IPPerMinute:     100,
+		IPBurst:         10, // High enough not to interfere
 		UserPerMinute:   100,
+		UserBurst:       10, // High enough not to interfere
 		CleanupInterval: time.Hour,
 		LimiterTTL:      time.Hour,
 	}
@@ -158,10 +161,13 @@ func TestEnhancedRateLimiterPriority(t *testing.T) {
 
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond:   1,
-		GlobalBurst:       2,
+		GlobalBurst:       3,
 		DomainPerMinute:   100, // Add domain limits to avoid divide by zero
+		DomainBurst:       10,  // High enough not to interfere
 		IPPerMinute:       100,
+		IPBurst:           10, // High enough not to interfere
 		UserPerMinute:     100,
+		UserBurst:         10, // High enough not to interfere
 		EnablePriority:    true,
 		HighPriorityRatio: 0.5, // Reserve 50% for high priority
 		CleanupInterval:   time.Hour,
@@ -204,9 +210,14 @@ func TestEnhancedRateLimiterExponentialBackoff(t *testing.T) {
 	metrics := NewMetrics(registry)
 
 	config := EnhancedRateLimitConfig{
-		GlobalPerSecond:          10, // High enough to not interfere
-		DomainPerMinute:          1,  // Very restrictive
-		DomainBurst:              1,
+		GlobalPerSecond:          10,  // High enough to not interfere
+		GlobalBurst:              10,  // High enough not to interfere
+		DomainPerMinute:          600, // 10 per second, fast enough to refill during test
+		DomainBurst:              1,   // Very restrictive to trigger backoff
+		IPPerMinute:              100, // High enough not to interfere
+		IPBurst:                  10,  // High enough not to interfere
+		UserPerMinute:            100, // High enough not to interfere
+		UserBurst:                10,  // High enough not to interfere
 		EnableExponentialBackoff: true,
 		InitialBackoff:           50 * time.Millisecond,
 		MaxBackoff:               200 * time.Millisecond,
@@ -242,8 +253,8 @@ func TestEnhancedRateLimiterExponentialBackoff(t *testing.T) {
 	assert.Contains(t, result.Reason, "backoff")
 	assert.True(t, result.BackoffTime > 0)
 
-	// Wait for backoff to expire
-	time.Sleep(result.BackoffTime + 10*time.Millisecond)
+	// Wait for backoff to expire AND for rate limiter to refill
+	time.Sleep(result.BackoffTime + 200*time.Millisecond) // Extra time for rate limiter refill
 
 	// Request should be allowed again after backoff expires
 	result = rl.CheckRateLimit(req)
@@ -256,7 +267,11 @@ func TestEnhancedRateLimiterCleanup(t *testing.T) {
 
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 10,
+		GlobalBurst:     10, // High enough not to interfere
 		DomainPerMinute: 10,
+		DomainBurst:     10,  // High enough not to interfere
+		IPPerMinute:     100, // High enough not to interfere
+		IPBurst:         10,  // High enough not to interfere
 		CleanupInterval: 100 * time.Millisecond,
 		LimiterTTL:      200 * time.Millisecond,
 	}
@@ -356,6 +371,11 @@ func TestEnhancedRateLimiterUserLimits(t *testing.T) {
 
 	config := EnhancedRateLimitConfig{
 		GlobalPerSecond: 100, // High enough to not interfere
+		GlobalBurst:     10,  // High enough not to interfere
+		DomainPerMinute: 100, // High enough not to interfere
+		DomainBurst:     10,  // High enough not to interfere
+		IPPerMinute:     100, // High enough not to interfere
+		IPBurst:         10,  // High enough not to interfere
 		UserPerMinute:   2,
 		UserBurst:       1,
 		CleanupInterval: time.Hour,
