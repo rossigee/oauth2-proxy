@@ -90,7 +90,12 @@ func NewCircuitBreaker(name string, config CircuitBreakerConfig, metrics *Metric
 }
 
 // Execute runs the given function with circuit breaker protection
-func (cb *CircuitBreaker) Execute(_ context.Context, fn func() error) error {
+func (cb *CircuitBreaker) Execute(ctx context.Context, fn func() error) error {
+	// Check if context is already cancelled
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// Check if we can execute the request
 	if !cb.allowRequest() {
 		cb.metrics.CircuitBreakerState(cb.name, "rejected", cb.state.String())
