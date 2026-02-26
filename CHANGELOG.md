@@ -44,6 +44,9 @@ This release includes significant reliability improvements and code quality enha
   - Remove unused variables and imports
   - Add proper security annotations for safe type conversions
 
+- **Authorization Fixes**:
+  - Enforce group and email restrictions in proxy requests to match AuthOnly behavior
+
 - **Build & Dependencies**:
   - Update go.mod and go.sum with missing testify dependencies
   - Fix all compilation errors and import issues
