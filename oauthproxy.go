@@ -1132,6 +1132,10 @@ func (p *OAuthProxy) Proxy(rw http.ResponseWriter, req *http.Request) {
 	switch err {
 	case nil:
 		// we are authenticated
+		if !authOnlyAuthorize(req, session) {
+			p.ErrorPage(rw, req, http.StatusForbidden, "Forbidden")
+			return
+		}
 		p.addHeadersForProxying(rw, session)
 		p.headersChain.Then(p.upstreamProxy).ServeHTTP(rw, req)
 	case ErrNeedsLogin:
