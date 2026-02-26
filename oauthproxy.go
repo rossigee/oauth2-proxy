@@ -29,9 +29,9 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/cookies"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/encryption"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/handlers"
-	proxyhttp "github.com/oauth2-proxy/oauth2-proxy/v7/pkg/http"
 	providersmgr "github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
+	proxyhttp "github.com/oauth2-proxy/oauth2-proxy/v7/pkg/proxyhttp"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/util"
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/version"
 
