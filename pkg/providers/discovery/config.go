@@ -32,7 +32,7 @@ func NewConfigDiscovery(configs []DomainProviderConfig) *ConfigDiscovery {
 
 		providerType := config.ProviderType
 		if providerType == "" {
-			providerType = "oidc" // Default to OIDC
+			providerType = defaultProviderType // Default to OIDC
 		}
 
 		domainMap[domain] = &ProviderInfo{

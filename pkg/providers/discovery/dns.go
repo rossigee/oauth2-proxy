@@ -88,7 +88,7 @@ func (d *DNSDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error) {
 // Expected format: "issuer=https://accounts.google.com;type=oidc;client_id=optional"
 func (d *DNSDiscovery) parseTXTRecord(record string) (*ProviderInfo, error) {
 	info := &ProviderInfo{
-		ProviderType: "oidc", // Default to OIDC
+		ProviderType: defaultProviderType, // Default to OIDC
 	}
 
 	// Split the record into key=value pairs

@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const defaultProviderType = "oidc"
+
 // WellKnownDiscovery implements domain-to-provider discovery using HTTP well-known endpoints
 type WellKnownDiscovery struct {
 	httpClient *http.Client
@@ -95,7 +97,7 @@ func (w *WellKnownDiscovery) fetchProviderInfo(url string) (*ProviderInfo, error
 
 	providerType := wellKnownResp.ProviderType
 	if providerType == "" {
-		providerType = "oidc" // Default to OIDC
+		providerType = defaultProviderType // Default to OIDC
 	}
 
 	return &ProviderInfo{
