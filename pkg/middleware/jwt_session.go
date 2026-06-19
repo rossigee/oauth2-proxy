@@ -13,7 +13,10 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
-const jwtRegexFormat = `^ey[a-zA-Z0-9_-]*\.ey[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]+$`
+const (
+	jwtRegexFormat = `^ey[a-zA-Z0-9_-]*\.ey[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]+$`
+	bearerToken    = "Bearer"
+)
 
 func NewJwtSessionLoader(sessionLoaders []middlewareapi.TokenToSessionFunc, bearerTokenLoginFallback bool) alice.Constructor {
 	js := &jwtSessionLoader{
@@ -99,7 +102,7 @@ func (j *jwtSessionLoader) findTokenFromHeader(header string) (string, error) {
 		return "", err
 	}
 
-	if tokenType == "Bearer" && j.jwtRegex.MatchString(token) {
+	if tokenType == bearerToken && j.jwtRegex.MatchString(token) {
 		// Found a JWT as a bearer token
 		return token, nil
 	}

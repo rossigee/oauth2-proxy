@@ -25,7 +25,7 @@ var (
 	// Default Login URL for Facebook.
 	// Pre-parsed URL of https://www.facebook.com/v2.5/dialog/oauth.
 	facebookDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "www.facebook.com",
 		Path:   "/v2.5/dialog/oauth",
 		// ?granted_scopes=true
@@ -34,7 +34,7 @@ var (
 	// Default Redeem URL for Facebook.
 	// Pre-parsed URL of https://graph.facebook.com/v2.5/oauth/access_token.
 	facebookDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "graph.facebook.com",
 		Path:   "/v2.5/oauth/access_token",
 	}
@@ -42,7 +42,7 @@ var (
 	// Default Profile URL for Facebook.
 	// Pre-parsed URL of https://graph.facebook.com/v2.5/me.
 	facebookDefaultProfileURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "graph.facebook.com",
 		Path:   "/v2.5/me",
 	}

@@ -33,13 +33,14 @@ type MicrosoftEntraIDProvider struct {
 
 const (
 	microsoftEntraIDProviderName = "Microsoft Entra ID"
+	msEntraIDProfilePath         = "/v1.0/me"
 )
 
 var (
 	microsoftGraphURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "graph.microsoft.com",
-		Path:   "/v1.0/me",
+		Path:   msEntraIDProfilePath,
 	}
 )
 

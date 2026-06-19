@@ -15,6 +15,7 @@ const (
 
 	acceptHeader          = "Accept"
 	acceptApplicationJSON = "application/json"
+	schemeHTTPS           = "https"
 )
 
 func makeAuthorizationHeader(prefix, token string, extraHeaders map[string]string) http.Header {

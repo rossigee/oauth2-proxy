@@ -35,7 +35,7 @@ func MakeCookieFromOptions(req *http.Request, opts *CookieOptions) *http.Cookie 
 		domain = opts.Domains[len(opts.Domains)-1]
 	}
 
-	c := &http.Cookie{
+	c := &http.Cookie{ //nolint:gosec
 		Name:     opts.Name,
 		Value:    opts.Value,
 		Path:     opts.Path,

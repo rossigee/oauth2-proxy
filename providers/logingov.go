@@ -53,30 +53,32 @@ func randSeq(n int) string {
 const (
 	loginGovProviderName = "login.gov"
 	loginGovDefaultScope = "email openid"
+	loginGovDefaultHost  = "secure.login.gov"
+	defaultAcrValue      = "http://idmanagement.gov/ns/assurance/loa/1"
 )
 
 var (
 	// Default Login URL for LoginGov.
 	// Pre-parsed URL of https://secure.login.gov/openid_connect/authorize.
 	loginGovDefaultLoginURL = &url.URL{
-		Scheme: "https",
-		Host:   "secure.login.gov",
+		Scheme: schemeHTTPS,
+		Host:   loginGovDefaultHost,
 		Path:   "/openid_connect/authorize",
 	}
 
 	// Default Redeem URL for LoginGov.
 	// Pre-parsed URL of https://secure.login.gov/api/openid_connect/token.
 	loginGovDefaultRedeemURL = &url.URL{
-		Scheme: "https",
-		Host:   "secure.login.gov",
+		Scheme: schemeHTTPS,
+		Host:   loginGovDefaultHost,
 		Path:   "/api/openid_connect/token",
 	}
 
 	// Default Profile URL for LoginGov.
 	// Pre-parsed URL of https://graph.loginGov.com/v2.5/me.
 	loginGovDefaultProfileURL = &url.URL{
-		Scheme: "https",
-		Host:   "secure.login.gov",
+		Scheme: schemeHTTPS,
+		Host:   loginGovDefaultHost,
 		Path:   "/api/openid_connect/userinfo",
 	}
 )
@@ -275,7 +277,7 @@ func (p *LoginGovProvider) Redeem(ctx context.Context, _, code, codeVerifier str
 // GetLoginURL overrides GetLoginURL to add login.gov parameters
 func (p *LoginGovProvider) GetLoginURL(redirectURI, state, _ string, extraParams url.Values) string {
 	if len(extraParams["acr_values"]) == 0 {
-		acr := "http://idmanagement.gov/ns/assurance/loa/1"
+		acr := defaultAcrValue
 		extraParams.Add("acr_values", acr)
 	}
 	extraParams.Add("nonce", p.Nonce)

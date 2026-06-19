@@ -22,6 +22,7 @@ const (
 	httpScheme  = "http"
 	httpsScheme = "https"
 	unixScheme  = "unix"
+	gapAuth     = "Gap-Auth"
 )
 
 // SignatureHeaders contains the headers to be signed by the hmac algorithm
@@ -37,7 +38,7 @@ var SignatureHeaders = []string{
 	"X-Forwarded-Preferred-User",
 	"X-Forwarded-Access-Token",
 	"Cookie",
-	"Gap-Auth",
+	gapAuth,
 }
 
 // newHTTPUpstreamProxy creates a new httpUpstreamProxy that can serve requests
@@ -89,7 +90,7 @@ func (h *httpUpstreamProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 
 	// TODO (@tuunit) - Deprecate GAP-Signature & remove GAP-Auth
 	if h.auth != nil {
-		req.Header.Set("GAP-Auth", rw.Header().Get("GAP-Auth"))
+		req.Header.Set(gapAuth, rw.Header().Get(gapAuth))
 		h.auth.SignRequest(req)
 	}
 	if h.wsHandler != nil && strings.EqualFold(req.Header.Get("Connection"), "upgrade") && req.Header.Get("Upgrade") == "websocket" {

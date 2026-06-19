@@ -25,7 +25,7 @@ var (
 	// Default Login URL for DigitalOcean.
 	// Pre-parsed URL of https://cloud.digitalocean.com/v1/oauth/authorize.
 	digitalOceanDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "cloud.digitalocean.com",
 		Path:   "/v1/oauth/authorize",
 	}
@@ -33,7 +33,7 @@ var (
 	// Default Redeem URL for DigitalOcean.
 	// Pre-parsed URL of  https://cloud.digitalocean.com/v1/oauth/token.
 	digitalOceanDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "cloud.digitalocean.com",
 		Path:   "/v1/oauth/token",
 	}
@@ -41,7 +41,7 @@ var (
 	// Default Profile URL for DigitalOcean.
 	// Pre-parsed URL of https://cloud.digitalocean.com/v2/account.
 	digitalOceanDefaultProfileURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "api.digitalocean.com",
 		Path:   "/v2/account",
 	}

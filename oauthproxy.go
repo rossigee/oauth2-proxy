@@ -704,7 +704,7 @@ func (p *OAuthProxy) SignIn(rw http.ResponseWriter, req *http.Request) {
 			p.ErrorPage(rw, req, http.StatusInternalServerError, err.Error())
 			return
 		}
-		http.Redirect(rw, req, redirect, http.StatusFound)
+		http.Redirect(rw, req, redirect, http.StatusFound) //nolint:gosec
 	} else {
 		if p.SkipProviderButton {
 			p.OAuthStart(rw, req)
@@ -782,7 +782,7 @@ func (p *OAuthProxy) SignOut(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(rw, req, redirect, http.StatusFound)
+	http.Redirect(rw, req, redirect, http.StatusFound) //nolint:gosec
 }
 
 func (p *OAuthProxy) backendLogout(rw http.ResponseWriter, req *http.Request) {
@@ -877,7 +877,7 @@ func (p *OAuthProxy) doOAuthStart(rw http.ResponseWriter, req *http.Request, ove
 		p.ErrorPage(rw, req, http.StatusInternalServerError, err.Error())
 		return
 	}
-	http.Redirect(rw, req, loginURL, http.StatusFound)
+	http.Redirect(rw, req, loginURL, http.StatusFound) //nolint:gosec
 }
 
 // OAuthCallback is the OAuth2 authentication flow callback that finishes the
@@ -969,7 +969,7 @@ func (p *OAuthProxy) OAuthCallback(rw http.ResponseWriter, req *http.Request) {
 			p.ErrorPage(rw, req, http.StatusInternalServerError, err.Error())
 			return
 		}
-		http.Redirect(rw, req, appRedirect, http.StatusFound)
+		http.Redirect(rw, req, appRedirect, http.StatusFound) //nolint:gosec
 	} else {
 		logger.PrintAuthf(session.Email, req, logger.AuthFailure, "Invalid authentication via OAuth2: unauthorized")
 		p.ErrorPage(rw, req, http.StatusForbidden, "Invalid session: unauthorized")

@@ -13,6 +13,22 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	defaultHTTPAddress                = "127.0.0.1:4180"
+	defaultAzureTenant                = "common"
+	defaultApprovalPromptValue        = "force"
+	defaultUserClaim                  = "user"
+	authorizationHeader               = "Authorization"
+	basicAuthPrefix                   = "Basic "
+	xForwardedGroupsHeader            = "X-Forwarded-Groups"
+	xForwardedUserHeader              = "X-Forwarded-User"
+	xForwardedEmailHeader             = "X-Forwarded-Email"
+	accessTokenClaim                  = "access_token"
+	xForwardedPreferredUsernameHeader = "X-Forwarded-Preferred-Username"
+	preferredUsernameClaim            = "preferred_username"
+	approvalPromptParam               = "approval_prompt"
+)
+
 type LegacyOptions struct {
 	// Legacy options related to upstream servers
 	LegacyUpstreams LegacyUpstreams `cfg:",squash"`
@@ -46,18 +62,18 @@ func NewLegacyOptions() *LegacyOptions {
 		},
 
 		LegacyServer: LegacyServer{
-			HTTPAddress:  "127.0.0.1:4180",
+			HTTPAddress:  defaultHTTPAddress,
 			HTTPSAddress: ":443",
 		},
 
 		LegacyProvider: LegacyProvider{
-			ProviderType:           "google",
-			AzureTenant:            "common",
-			ApprovalPrompt:         "force",
-			UserIDClaim:            "email",
-			OIDCEmailClaim:         "email",
-			OIDCGroupsClaim:        "groups",
-			OIDCAudienceClaims:     []string{"aud"},
+			ProviderType:           string(GoogleProvider),
+			AzureTenant:            defaultAzureTenant,
+			ApprovalPrompt:         defaultApprovalPromptValue,
+			UserIDClaim:            OIDCEmailClaim,
+			OIDCEmailClaim:         OIDCEmailClaim,
+			OIDCGroupsClaim:        OIDCGroupsClaim,
+			OIDCAudienceClaims:     OIDCAudienceClaims,
 			OIDCExtraAudiences:     []string{},
 			OIDCEnabledSigningAlgs: []string{},
 			InsecureOIDCSkipNonce:  true,
@@ -284,19 +300,19 @@ func (l *LegacyHeaders) getResponseHeaders() []Header {
 }
 
 func getBasicAuthHeader(preferEmailToUser bool, basicAuthPassword string) Header {
-	claim := "user"
+	claim := defaultUserClaim
 	if preferEmailToUser {
-		claim = "email"
+		claim = OIDCEmailClaim
 	}
 
 	return Header{
-		Name:                 "Authorization",
+		Name:                 authorizationHeader,
 		PreserveRequestValue: ptr.To(false),
 		Values: []HeaderValue{
 			{
 				ClaimSource: &ClaimSource{
 					Claim:  claim,
-					Prefix: "Basic ",
+					Prefix: basicAuthPrefix,
 					BasicAuthPassword: &SecretSource{
 						Value: []byte(basicAuthPassword),
 					},
@@ -309,12 +325,12 @@ func getBasicAuthHeader(preferEmailToUser bool, basicAuthPassword string) Header
 func getPassUserHeaders(preferEmailToUser bool) []Header {
 	headers := []Header{
 		{
-			Name:                 "X-Forwarded-Groups",
+			Name:                 xForwardedGroupsHeader,
 			PreserveRequestValue: ptr.To(false),
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "groups",
+						Claim: OIDCGroupsClaim,
 					},
 				},
 			},
@@ -324,12 +340,12 @@ func getPassUserHeaders(preferEmailToUser bool) []Header {
 	if preferEmailToUser {
 		return append(headers,
 			Header{
-				Name:                 "X-Forwarded-User",
+				Name:                 xForwardedUserHeader,
 				PreserveRequestValue: ptr.To(false),
 				Values: []HeaderValue{
 					{
 						ClaimSource: &ClaimSource{
-							Claim: "email",
+							Claim: OIDCEmailClaim,
 						},
 					},
 				},
@@ -339,23 +355,23 @@ func getPassUserHeaders(preferEmailToUser bool) []Header {
 
 	return append(headers,
 		Header{
-			Name:                 "X-Forwarded-User",
+			Name:                 xForwardedUserHeader,
 			PreserveRequestValue: ptr.To(false),
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "user",
+						Claim: defaultUserClaim,
 					},
 				},
 			},
 		},
 		Header{
-			Name:                 "X-Forwarded-Email",
+			Name:                 xForwardedEmailHeader,
 			PreserveRequestValue: ptr.To(false),
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "email",
+						Claim: OIDCEmailClaim,
 					},
 				},
 			},
@@ -370,7 +386,7 @@ func getPassAccessTokenHeader() Header {
 		Values: []HeaderValue{
 			{
 				ClaimSource: &ClaimSource{
-					Claim: "access_token",
+					Claim: accessTokenClaim,
 				},
 			},
 		},
@@ -379,7 +395,7 @@ func getPassAccessTokenHeader() Header {
 
 func getAuthorizationHeader() Header {
 	return Header{
-		Name:                 "Authorization",
+		Name:                 authorizationHeader,
 		PreserveRequestValue: ptr.To(false),
 		Values: []HeaderValue{
 			{
@@ -394,12 +410,12 @@ func getAuthorizationHeader() Header {
 
 func getPreferredUsernameHeader() Header {
 	return Header{
-		Name:                 "X-Forwarded-Preferred-Username",
+		Name:                 xForwardedPreferredUsernameHeader,
 		PreserveRequestValue: ptr.To(false),
 		Values: []HeaderValue{
 			{
 				ClaimSource: &ClaimSource{
-					Claim: "preferred_username",
+					Claim: preferredUsernameClaim,
 				},
 			},
 		},
@@ -414,7 +430,7 @@ func getXAuthRequestHeaders() []Header {
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "user",
+						Claim: defaultUserClaim,
 					},
 				},
 			},
@@ -425,7 +441,7 @@ func getXAuthRequestHeaders() []Header {
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "email",
+						Claim: OIDCEmailClaim,
 					},
 				},
 			},
@@ -436,7 +452,7 @@ func getXAuthRequestHeaders() []Header {
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "preferred_username",
+						Claim: preferredUsernameClaim,
 					},
 				},
 			},
@@ -447,7 +463,7 @@ func getXAuthRequestHeaders() []Header {
 			Values: []HeaderValue{
 				{
 					ClaimSource: &ClaimSource{
-						Claim: "groups",
+						Claim: OIDCGroupsClaim,
 					},
 				},
 			},
@@ -464,7 +480,7 @@ func getXAuthRequestAccessTokenHeader() Header {
 		Values: []HeaderValue{
 			{
 				ClaimSource: &ClaimSource{
-					Claim: "access_token",
+					Claim: accessTokenClaim,
 				},
 			},
 		},
@@ -491,7 +507,7 @@ func legacyServerFlagset() *pflag.FlagSet {
 	flagSet.String("metrics-secure-address", "", "the address /metrics will be served on for HTTPS clients (e.g. \":9100\")")
 	flagSet.String("metrics-tls-cert-file", "", "path to certificate file for secure metrics server")
 	flagSet.String("metrics-tls-key-file", "", "path to private key file for secure metrics server")
-	flagSet.String("http-address", "127.0.0.1:4180", "[http://]<addr>:<port> or unix://<path> or fd:<int> (case insensitive) to listen on for HTTP clients")
+	flagSet.String("http-address", defaultHTTPAddress, "[http://]<addr>:<port> or unix://<path> or fd:<int> (case insensitive) to listen on for HTTP clients")
 	flagSet.String("https-address", ":443", "<addr>:<port> to listen on for HTTPS clients")
 	flagSet.String("tls-cert-file", "", "path to certificate file")
 	flagSet.String("tls-key-file", "", "path to private key file")
@@ -576,7 +592,7 @@ func legacyProviderFlagSet() *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet("provider", pflag.ExitOnError)
 
 	flagSet.StringSlice("keycloak-group", []string{}, "restrict logins to members of these groups (may be given multiple times)")
-	flagSet.String("azure-tenant", "common", "go to a tenant-specific or common (tenant-independent) endpoint.")
+	flagSet.String("azure-tenant", defaultAzureTenant, "go to a tenant-specific or common (tenant-independent) endpoint.")
 	flagSet.String("azure-graph-group-field", "", "configures the group field to be used when building the groups list(`id` or `displayName`. Default is `id`) from Microsoft Graph(available only for v2.0 oidc url). Based on this value, the `allowed-group` config values should be adjusted accordingly. If using `id` as group field, `allowed-group` should contains groups IDs, if using `displayName` as group field, `allowed-group` should contains groups name")
 	flagSet.StringSlice("entra-id-allowed-tenant", []string{}, "list of tenants allowed for MS Entra ID multi-tenant application")
 	flagSet.Bool("entra-id-federated-token-auth", false, "enable oAuth client authentication with federated token projected by Azure Workload Identity plugin, instead of client secret.")
@@ -593,7 +609,7 @@ func legacyProviderFlagSet() *pflag.FlagSet {
 	flagSet.String("client-secret", "", "the OAuth Client Secret")
 	flagSet.String("client-secret-file", "", "the file with OAuth Client Secret")
 
-	flagSet.String("provider", "google", "OAuth provider")
+	flagSet.String("provider", string(GoogleProvider), "OAuth provider")
 	flagSet.String("provider-display-name", "", "Provider display name")
 	flagSet.StringSlice("provider-ca-file", []string{}, "One or more paths to CA certificates that should be used when connecting to the provider.  If not specified, the default Go trust sources are used instead.")
 	flagSet.Bool("use-system-trust-store", false, "Determines if 'provider-ca-file' files and the system trust store are used. If set to true, your custom CA files and the system trust store are used otherwise only your custom CA files.")
@@ -618,7 +634,7 @@ func legacyProviderFlagSet() *pflag.FlagSet {
 	flagSet.String("validate-url", "", "Access token validation endpoint")
 	flagSet.String("scope", "", "OAuth scope specification")
 	flagSet.String("prompt", "", "OIDC prompt")
-	flagSet.String("approval-prompt", "force", "OAuth approval_prompt")
+	flagSet.String("approval-prompt", defaultApprovalPromptValue, "OAuth approval_prompt")
 	flagSet.String("code-challenge-method", "", "use PKCE code challenges with the specified method. Either 'plain' or 'S256'")
 	flagSet.String("force-code-challenge-method", "", "Deprecated - use --code-challenge-method")
 
@@ -779,7 +795,7 @@ func (l *LegacyProvider) convert() (Providers, error) {
 			Team:       l.BitbucketTeam,
 			Repository: l.BitbucketRepository,
 		}
-	case "google":
+	case GoogleProvider:
 		if len(l.GoogleGroupsLegacy) != 0 && !reflect.DeepEqual(l.GoogleGroupsLegacy, l.GoogleGroups) {
 			// Log the deprecation notice
 			logger.Error(
@@ -819,11 +835,11 @@ func (l *LegacyProvider) convert() (Providers, error) {
 	case l.Prompt != "":
 		urlParams = append(urlParams, LoginURLParameter{Name: "prompt", Default: []string{l.Prompt}})
 	case l.ApprovalPrompt != "":
-		urlParams = append(urlParams, LoginURLParameter{Name: "approval_prompt", Default: []string{l.ApprovalPrompt}})
+		urlParams = append(urlParams, LoginURLParameter{Name: approvalPromptParam, Default: []string{l.ApprovalPrompt}})
 	default:
 		// match legacy behaviour by default - if neither prompt nor approval_prompt
 		// specified, use approval_prompt=force
-		urlParams = append(urlParams, LoginURLParameter{Name: "approval_prompt", Default: []string{"force"}})
+		urlParams = append(urlParams, LoginURLParameter{Name: approvalPromptParam, Default: []string{defaultApprovalPromptValue}})
 	}
 
 	provider.LoginURLParameters = urlParams

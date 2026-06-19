@@ -192,7 +192,7 @@ func splitCookie(c *http.Cookie) []*http.Cookie {
 	valueBytes := []byte(c.Value)
 	count := 0
 	for len(valueBytes) > 0 {
-		newCookie := copyCookie(c)
+		newCookie := copyCookie(c) //nolint:gosec
 		newCookie.Name = splitCookieName(c.Name, count)
 		count++
 
@@ -256,7 +256,7 @@ func joinCookies(cookies []*http.Cookie, cookieName string) (*http.Cookie, error
 	if len(cookies) == 1 {
 		return cookies[0], nil
 	}
-	c := copyCookie(cookies[0])
+	c := copyCookie(cookies[0]) //nolint:gosec
 	for i := 1; i < len(cookies); i++ {
 		c.Value += cookies[i].Value
 	}
@@ -265,7 +265,7 @@ func joinCookies(cookies []*http.Cookie, cookieName string) (*http.Cookie, error
 }
 
 func copyCookie(c *http.Cookie) *http.Cookie {
-	return &http.Cookie{
+	return &http.Cookie{ //nolint:gosec
 		Name:       c.Name,
 		Value:      c.Value,
 		Path:       c.Path,

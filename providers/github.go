@@ -31,26 +31,28 @@ type GitHubProvider struct {
 var _ Provider = (*GitHubProvider)(nil)
 
 const (
-	githubProviderName = "GitHub"
-	githubDefaultScope = "user:email read:org"
-	orgTeamSeparator   = ":"
+	githubProviderName    = "GitHub"
+	githubDefaultScope    = "user:email read:org"
+	githubAuthorizePath   = "/login/oauth/authorize"
+	githubAccessTokenPath = "/login/oauth/access_token" //nolint:gosec
+	orgTeamSeparator      = ":"
 )
 
 var (
 	// Default Login URL for GitHub.
 	// Pre-parsed URL of https://github.org/login/oauth/authorize.
 	githubDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "github.com",
-		Path:   "/login/oauth/authorize",
+		Path:   githubAuthorizePath,
 	}
 
 	// Default Redeem URL for GitHub.
 	// Pre-parsed URL of https://github.org/login/oauth/access_token.
 	githubDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "github.com",
-		Path:   "/login/oauth/access_token",
+		Path:   githubAccessTokenPath,
 	}
 
 	// Default Validation URL for GitHub.
@@ -58,7 +60,7 @@ var (
 	// Other API requests are based off of this (eg to fetch users/groups).
 	// Pre-parsed URL of https://api.github.com/.
 	githubDefaultValidateURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "api.github.com",
 		Path:   "/",
 	}
