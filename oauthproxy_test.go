@@ -3257,6 +3257,7 @@ func TestProxyAllowedGroups(t *testing.T) {
 			}
 
 			test.req, _ = http.NewRequest(http.MethodGet, fmt.Sprintf("/%s", tt.querystring), nil)
+			test.req.URL.RawQuery = strings.TrimPrefix(tt.querystring, "?")
 
 			test.req.Header.Add("accept", applicationJSON)
 			err = test.SaveSession(session)
