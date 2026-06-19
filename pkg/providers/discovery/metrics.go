@@ -14,6 +14,22 @@ const (
 	metricsSubsystem = "email_discovery"
 )
 
+const (
+	labelMethod       = "method"
+	labelDomain       = "domain"
+	labelProviderType = "provider_type"
+	labelErrorType    = "error_type"
+	labelSuccess      = "success"
+	labelCacheType    = "cache_type"
+	labelRecordType   = "record_type"
+	labelEndpoint     = "endpoint"
+	labelStatusCode   = "status_code"
+	labelName         = "name"
+	labelState        = "state"
+	labelLimiterType  = "limiter_type"
+	labelKey          = "key"
+)
+
 // Metrics provides comprehensive monitoring for email discovery operations
 type Metrics struct {
 	// Discovery operation metrics
@@ -94,97 +110,97 @@ func (m *Metrics) initializeMetrics() {
 	m.discoveryRequests = m.registerCounterVec(
 		"discovery_requests_total",
 		"Total number of email discovery requests",
-		[]string{"method", "domain"},
+		[]string{labelMethod, labelDomain},
 	)
 
 	m.discoverySuccess = m.registerCounterVec(
 		"discovery_success_total",
 		"Total number of successful email discoveries",
-		[]string{"method", "domain", "provider_type"},
+		[]string{labelMethod, labelDomain, labelProviderType},
 	)
 
 	m.discoveryErrors = m.registerCounterVec(
 		"discovery_errors_total",
 		"Total number of email discovery errors",
-		[]string{"method", "domain", "error_type"},
+		[]string{labelMethod, labelDomain, labelErrorType},
 	)
 
 	m.discoveryDuration = m.registerHistogramVec(
 		"discovery_duration_seconds",
 		"Time taken for email discovery operations",
-		[]string{"method", "success"},
+		[]string{labelMethod, labelSuccess},
 		[]float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
 	)
 
 	m.cacheHits = m.registerCounterVec(
 		"cache_hits_total",
 		"Total number of cache hits",
-		[]string{"cache_type", "domain"},
+		[]string{labelCacheType, labelDomain},
 	)
 
 	m.cacheMisses = m.registerCounterVec(
 		"cache_misses_total",
 		"Total number of cache misses",
-		[]string{"cache_type", "domain"},
+		[]string{labelCacheType, labelDomain},
 	)
 
 	// Provider creation metrics
 	m.providerCreations = m.registerCounterVec(
 		"provider_creations_total",
 		"Total number of dynamic provider creations",
-		[]string{"provider_type", "domain"},
+		[]string{labelProviderType, labelDomain},
 	)
 
 	m.providerErrors = m.registerCounterVec(
 		"provider_errors_total",
 		"Total number of provider creation errors",
-		[]string{"provider_type", "domain", "error_type"},
+		[]string{labelProviderType, labelDomain, labelErrorType},
 	)
 
 	m.activeProviders = m.registerGaugeVec(
 		"active_providers",
 		"Current number of active providers",
-		[]string{"provider_type"},
+		[]string{labelProviderType},
 	)
 
 	// DNS discovery specific metrics
 	m.dnsQueries = m.registerCounterVec(
 		"dns_queries_total",
 		"Total number of DNS queries for discovery",
-		[]string{"domain", "record_type"},
+		[]string{labelDomain, labelRecordType},
 	)
 
 	m.dnsQueryDuration = m.registerHistogramVec(
 		"dns_query_duration_seconds",
 		"Time taken for DNS queries",
-		[]string{"record_type", "success"},
+		[]string{labelRecordType, labelSuccess},
 		[]float64{.001, .005, .01, .025, .05, .1, .25, .5, 1, 2},
 	)
 
 	m.dnsErrors = m.registerCounterVec(
 		"dns_errors_total",
 		"Total number of DNS query errors",
-		[]string{"domain", "error_type"},
+		[]string{labelDomain, labelErrorType},
 	)
 
 	// HTTP discovery specific metrics
 	m.httpRequests = m.registerCounterVec(
 		"http_requests_total",
 		"Total number of HTTP requests for discovery",
-		[]string{"domain", "endpoint", "status_code"},
+		[]string{labelDomain, labelEndpoint, labelStatusCode},
 	)
 
 	m.httpRequestDuration = m.registerHistogramVec(
 		"http_request_duration_seconds",
 		"Time taken for HTTP discovery requests",
-		[]string{"endpoint", "success"},
+		[]string{labelEndpoint, labelSuccess},
 		[]float64{.01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 30},
 	)
 
 	m.httpErrors = m.registerCounterVec(
 		"http_errors_total",
 		"Total number of HTTP discovery errors",
-		[]string{"domain", "endpoint", "error_type"},
+		[]string{labelDomain, labelEndpoint, labelErrorType},
 	)
 
 	// Security metrics
@@ -203,20 +219,20 @@ func (m *Metrics) initializeMetrics() {
 	m.suspiciousActivity = m.registerCounterVec(
 		"suspicious_activity_total",
 		"Total number of suspicious activity detections",
-		[]string{"activity_type", "domain"},
+		[]string{"activity_type", labelDomain},
 	)
 
 	// Business metrics
 	m.domainDistribution = m.registerCounterVec(
 		"domain_distribution_total",
 		"Distribution of discovery requests by domain",
-		[]string{"domain", "success"},
+		[]string{labelDomain, labelSuccess},
 	)
 
 	m.methodPreference = m.registerCounterVec(
 		"method_preference_total",
 		"Discovery method preferences and usage",
-		[]string{"method", "fallback_reason"},
+		[]string{labelMethod, "fallback_reason"},
 	)
 
 	// Performance metrics
@@ -234,25 +250,25 @@ func (m *Metrics) initializeMetrics() {
 	m.circuitBreakerState = m.registerGaugeVec(
 		"circuit_breaker_state",
 		"Current state of circuit breakers (0=closed, 1=open, 2=half-open)",
-		[]string{"name", "state"},
+		[]string{labelName, labelState},
 	)
 
 	m.circuitBreakerOperations = m.registerCounterVec(
 		"circuit_breaker_operations_total",
 		"Total number of circuit breaker operations",
-		[]string{"name", "result"},
+		[]string{labelName, "result"},
 	)
 
 	m.circuitBreakerEvents = m.registerCounterVec(
 		"circuit_breaker_events_total",
 		"Total number of circuit breaker state change events",
-		[]string{"name", "event"},
+		[]string{labelName, "event"},
 	)
 
 	m.circuitBreakerDuration = m.registerHistogramVec(
 		"circuit_breaker_operation_duration_seconds",
 		"Duration of operations executed through circuit breakers",
-		[]string{"name", "result"},
+		[]string{labelName, "result"},
 		[]float64{.001, .005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
 	)
 
@@ -260,19 +276,19 @@ func (m *Metrics) initializeMetrics() {
 	m.rateLimiterHits = m.registerCounterVec(
 		"rate_limiter_hits_total",
 		"Total number of rate limiter hits (allowed requests)",
-		[]string{"limiter_type", "key"},
+		[]string{labelLimiterType, labelKey},
 	)
 
 	m.rateLimiterRejects = m.registerCounterVec(
 		"rate_limiter_rejects_total",
 		"Total number of rate limiter rejects (blocked requests)",
-		[]string{"limiter_type", "key", "reason"},
+		[]string{labelLimiterType, labelKey, "reason"},
 	)
 
 	m.rateLimiterBacklog = m.registerGaugeVec(
 		"rate_limiter_backlog",
 		"Current backlog of rate limiter buckets",
-		[]string{"limiter_type", "key"},
+		[]string{labelLimiterType, labelKey},
 	)
 }
 

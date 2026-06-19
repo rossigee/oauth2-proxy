@@ -33,28 +33,29 @@ const (
 	azureProviderName           = "Azure"
 	azureDefaultScope           = "openid"
 	azureDefaultGraphGroupField = "id"
+	azureProfilePath            = "/v1.0/me"
 )
 
 var (
 	// Default Login URL for Azure. Pre-parsed URL of https://login.microsoftonline.com/common/oauth2/authorize.
 	azureDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "login.microsoftonline.com",
 		Path:   "/common/oauth2/authorize",
 	}
 
 	// Default Redeem URL for Azure. Pre-parsed URL of https://login.microsoftonline.com/common/oauth2/token.
 	azureDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "login.microsoftonline.com",
 		Path:   "/common/oauth2/token",
 	}
 
 	// Default Profile URL for Azure. Pre-parsed URL of https://graph.microsoft.com/v1.0/me.
 	azureDefaultProfileURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "graph.microsoft.com",
-		Path:   "/v1.0/me",
+		Path:   azureProfilePath,
 	}
 )
 
@@ -117,7 +118,7 @@ func NewAzureProvider(p *ProviderData, opts options.AzureOptions) *AzureProvider
 func overrideTenantURL(current, defaultURL *url.URL, tenant, path string) {
 	if current == nil || current.String() == "" || current.String() == defaultURL.String() {
 		*current = url.URL{
-			Scheme: "https",
+			Scheme: schemeHTTPS,
 			Host:   current.Host,
 			Path:   "/" + tenant + "/oauth2/" + path}
 	}
@@ -132,9 +133,9 @@ func getMicrosoftGraphGroupsURL(profileURL *url.URL, graphGroupField string) *ur
 
 	// Select only security groups. Due to the filter option, count param is mandatory even if unused otherwise
 	return &url.URL{
-		Scheme:   "https",
+		Scheme:   schemeHTTPS,
 		Host:     profileURL.Host,
-		Path:     "/v1.0/me/transitiveMemberOf",
+		Path:     azureProfilePath + "/transitiveMemberOf",
 		RawQuery: "$count=true&$filter=securityEnabled+eq+true&" + selectStatement,
 	}
 }

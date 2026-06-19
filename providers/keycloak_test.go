@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	keycloakAccessToken  = "eyJKeycloak.eyJAccess.Token"
-	keycloakUserinfoPath = "/api/v3/user"
+	keycloakAccessToken = "eyJKeycloak.eyJAccess.Token"
 )
 
 func testKeycloakProvider(backend *httptest.Server) (*KeycloakProvider, error) {

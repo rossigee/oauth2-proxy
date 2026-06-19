@@ -19,6 +19,11 @@ const (
 	MethodWellKnown DiscoveryMethod = "wellknown"
 )
 
+const (
+	errTypeTimeout   = "timeout"
+	errTypeForbidden = "forbidden"
+)
+
 // Discoverer is the interface for provider discovery implementations
 type Discoverer interface {
 	DiscoverProvider(domain string) (*ProviderInfo, error)
@@ -145,7 +150,7 @@ func (u *UnifiedDiscovery) DiscoverProvider(domain string) (*ProviderInfo, error
 		}
 
 		// Error metrics
-		errorType := "unknown"
+		errorType := unknownState
 		if err != nil {
 			errorType = classifyError(err)
 			lastErr = err
@@ -176,8 +181,8 @@ func classifyError(err error) string {
 
 	errStr := err.Error()
 	switch {
-	case contains(errStr, "timeout"):
-		return "timeout"
+	case contains(errStr, errTypeTimeout):
+		return errTypeTimeout
 	case contains(errStr, "dns"):
 		return "dns_error"
 	case contains(errStr, "network"):
@@ -186,12 +191,12 @@ func classifyError(err error) string {
 		return "validation_error"
 	case contains(errStr, "not found"):
 		return "not_found"
-	case contains(errStr, "forbidden"):
-		return "forbidden"
+	case contains(errStr, errTypeForbidden):
+		return errTypeForbidden
 	case contains(errStr, "rate limit"):
 		return "rate_limited"
 	default:
-		return "unknown"
+		return unknownState
 	}
 }
 

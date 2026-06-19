@@ -8,6 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const requestsTotalMetricName = "oauth2_proxy_requests_total"
+
 // DefaultMetricsHandler is the default http.Handler for serving metrics from
 // the default prometheus.Registry
 var DefaultMetricsHandler = NewMetricsHandlerWithDefaultRegistry()
@@ -62,7 +64,7 @@ func NewRequestMetrics(registerer prometheus.Registerer) alice.Constructor {
 func registerRequestsCounter(registerer prometheus.Registerer) *prometheus.CounterVec {
 	counter := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "oauth2_proxy_requests_total",
+			Name: requestsTotalMetricName,
 			Help: "Total number of requests by HTTP status code.",
 		},
 		[]string{"code"},

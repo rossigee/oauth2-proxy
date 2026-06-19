@@ -2,6 +2,12 @@ package options
 
 import "github.com/oauth2-proxy/oauth2-proxy/v7/pkg/providers/discovery"
 
+const (
+	methodDNS       = "dns"
+	methodConfig    = "config"
+	methodWellKnown = "wellknown"
+)
+
 // EmailDiscoveryOptions contains configuration for email-domain based provider discovery
 type EmailDiscoveryOptions struct {
 	// Enable email-domain based provider routing
@@ -38,11 +44,11 @@ func (e *EmailDiscoveryOptions) ToDiscoveryConfig(domainProviders []DomainProvid
 	methods := make([]discovery.DiscoveryMethod, 0, len(e.Methods))
 	for _, method := range e.Methods {
 		switch method {
-		case "dns":
+		case methodDNS:
 			methods = append(methods, discovery.MethodDNS)
-		case "config":
+		case methodConfig:
 			methods = append(methods, discovery.MethodConfig)
-		case "wellknown":
+		case methodWellKnown:
 			methods = append(methods, discovery.MethodWellKnown)
 		}
 	}
@@ -71,7 +77,7 @@ func (e *EmailDiscoveryOptions) ToDiscoveryConfig(domainProviders []DomainProvid
 func GetDefaultEmailDiscoveryOptions() EmailDiscoveryOptions {
 	return EmailDiscoveryOptions{
 		Enabled:          false, // Disabled by default for backward compatibility
-		Methods:          []string{"config", "dns", "wellknown"},
+		Methods:          []string{methodConfig, methodDNS, methodWellKnown},
 		DNSEnabled:       true,
 		WellKnownEnabled: true,
 		FallbackProvider: "",
@@ -89,14 +95,14 @@ func (e *EmailDiscoveryOptions) Validate(domainProviders []DomainProviderMapping
 
 	// Validate methods
 	validMethods := map[string]bool{
-		"dns":       true,
-		"config":    true,
-		"wellknown": true,
+		methodDNS:       true,
+		methodConfig:    true,
+		methodWellKnown: true,
 	}
 
 	for _, method := range e.Methods {
 		if !validMethods[method] {
-			msgs = append(msgs, "invalid discovery method: "+method+" (valid: dns, config, wellknown)")
+			msgs = append(msgs, "invalid discovery method: "+method+" (valid: "+methodConfig+", "+methodDNS+", "+methodWellKnown+")")
 		}
 	}
 

@@ -16,6 +16,7 @@ import (
 const (
 	CodeChallengeMethodPlain = "plain"
 	CodeChallengeMethodS256  = "S256"
+	profileURLKey            = "profile"
 )
 
 // Provider represents an upstream identity provider implementation
@@ -126,11 +127,11 @@ func newProviderDataFromConfig(providerConfig options.Provider) (*ProviderData, 
 		dst **url.URL
 		raw string
 	}{
-		"login":    {dst: &p.LoginURL, raw: providerConfig.LoginURL},
-		"redeem":   {dst: &p.RedeemURL, raw: providerConfig.RedeemURL},
-		"profile":  {dst: &p.ProfileURL, raw: providerConfig.ProfileURL},
-		"validate": {dst: &p.ValidateURL, raw: providerConfig.ValidateURL},
-		"resource": {dst: &p.ProtectedResource, raw: providerConfig.ProtectedResource},
+		"login":       {dst: &p.LoginURL, raw: providerConfig.LoginURL},
+		"redeem":      {dst: &p.RedeemURL, raw: providerConfig.RedeemURL},
+		profileURLKey: {dst: &p.ProfileURL, raw: providerConfig.ProfileURL},
+		"validate":    {dst: &p.ValidateURL, raw: providerConfig.ValidateURL},
+		"resource":    {dst: &p.ProtectedResource, raw: providerConfig.ProtectedResource},
 	} {
 		var err error
 		*u.dst, err = url.Parse(u.raw)
@@ -158,7 +159,7 @@ func newProviderDataFromConfig(providerConfig options.Provider) (*ProviderData, 
 	}
 
 	if providerConfig.OIDCConfig.UserIDClaim == "" {
-		providerConfig.OIDCConfig.UserIDClaim = "email"
+		providerConfig.OIDCConfig.UserIDClaim = options.OIDCEmailClaim
 	}
 
 	// TODO (@NickMeves) - Remove This

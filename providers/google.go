@@ -56,13 +56,14 @@ type claims struct {
 const (
 	googleProviderName = "Google"
 	googleDefaultScope = "profile email"
+	userScope          = "user"
 )
 
 var (
 	// Default Login URL for Google.
 	// Pre-parsed URL of https://accounts.google.com/o/oauth2/auth?access_type=offline.
 	googleDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "accounts.google.com",
 		Path:   "/o/oauth2/auth",
 		// to get a refresh token. see https://developers.google.com/identity/protocols/OAuth2WebServer#offline
@@ -72,7 +73,7 @@ var (
 	// Default Redeem URL for Google.
 	// Pre-parsed URL of https://www.googleapis.com/oauth2/v3/token.
 	googleDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "www.googleapis.com",
 		Path:   "/oauth2/v3/token",
 	}
@@ -80,7 +81,7 @@ var (
 	// Default Validation URL for Google.
 	// Pre-parsed URL of https://www.googleapis.com/oauth2/v1/tokeninfo.
 	googleDefaultValidateURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "www.googleapis.com",
 		Path:   "/oauth2/v1/tokeninfo",
 	}
@@ -148,7 +149,7 @@ func getAdminAPIUserScope(scope string) string {
 	switch scope {
 	case "cloud":
 		return admin.CloudPlatformScope
-	case "user":
+	case userScope:
 		return admin.AdminDirectoryUserScope
 	}
 	return admin.AdminDirectoryUserReadonlyScope

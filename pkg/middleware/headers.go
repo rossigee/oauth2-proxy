@@ -12,6 +12,8 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/util/ptr"
 )
 
+const setCookieHeader = "Set-Cookie"
+
 func NewRequestHeaderInjector(headers []options.Header) (alice.Constructor, error) {
 	headerInjector, err := newRequestHeaderInjector(headers)
 	if err != nil {
@@ -45,7 +47,7 @@ func newStripHeaders(headers []options.Header) alice.Constructor {
 func flattenHeaders(headers http.Header) {
 	for name, values := range headers {
 		// Set-Cookie should not be flattened, ref: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
-		if len(values) > 1 && name != "Set-Cookie" {
+		if len(values) > 1 && name != setCookieHeader {
 			headers.Set(name, strings.Join(values, ","))
 		}
 	}

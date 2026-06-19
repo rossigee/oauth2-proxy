@@ -11,6 +11,11 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/encryption"
 )
 
+const (
+	samesiteNone           = "none"
+	errMissingCookieSecret = "missing setting: cookie-secret or cookie-secret-file"
+)
+
 func validateCookie(o options.Cookie) []string {
 	msgs := validateCookieSecret(o.Secret, o.SecretFile)
 
@@ -22,7 +27,7 @@ func validateCookie(o options.Cookie) []string {
 	}
 
 	switch o.SameSite {
-	case "", "none", "lax", "strict":
+	case "", samesiteNone, "lax", "strict":
 	default:
 		msgs = append(msgs, fmt.Sprintf("cookie_samesite (%q) must be one of ['', 'lax', 'strict', 'none']", o.SameSite))
 	}
@@ -39,7 +44,7 @@ func validateCookie(o options.Cookie) []string {
 func validateCookieName(name string) []string {
 	msgs := []string{}
 
-	cookie := &http.Cookie{Name: name}
+	cookie := &http.Cookie{Name: name} //nolint:gosec
 	if cookie.String() == "" {
 		msgs = append(msgs, fmt.Sprintf("invalid cookie name: %q", name))
 	}
@@ -52,7 +57,7 @@ func validateCookieName(name string) []string {
 
 func validateCookieSecret(secret string, secretFile string) []string {
 	if secret == "" && secretFile == "" {
-		return []string{"missing setting: cookie-secret or cookie-secret-file"}
+		return []string{errMissingCookieSecret}
 	}
 	if secret == "" && secretFile != "" {
 		fileData, err := os.ReadFile(secretFile)

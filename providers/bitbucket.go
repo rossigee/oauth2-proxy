@@ -29,7 +29,7 @@ var (
 	// Default Login URL for Bitbucket.
 	// Pre-parsed URL of https://bitbucket.org/site/oauth2/authorize.
 	bitbucketDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "bitbucket.org",
 		Path:   "/site/oauth2/authorize",
 	}
@@ -37,7 +37,7 @@ var (
 	// Default Redeem URL for Bitbucket.
 	// Pre-parsed URL of https://bitbucket.org/site/oauth2/access_token.
 	bitbucketDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "bitbucket.org",
 		Path:   "/site/oauth2/access_token",
 	}
@@ -47,7 +47,7 @@ var (
 	// Bitbucket does not have a Profile URL to use.
 	// Pre-parsed URL of https://api.bitbucket.org/2.0/user/emails.
 	bitbucketDefaultValidateURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "api.bitbucket.org",
 		Path:   "/2.0/user/emails",
 	}

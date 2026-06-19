@@ -122,7 +122,7 @@ func (c *CSRFProtection) ValidateToken(token, sessionID string) error {
 
 // SetTokenCookie sets a CSRF token as a secure cookie
 func (c *CSRFProtection) SetTokenCookie(w http.ResponseWriter, token string, secure bool) {
-	cookie := &http.Cookie{
+	cookie := &http.Cookie{ //nolint:gosec
 		Name:     c.cookieName,
 		Value:    token,
 		MaxAge:   int(CSRFCookieMaxAge.Seconds()),

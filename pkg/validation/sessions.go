@@ -11,6 +11,11 @@ import (
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/sessions/redis"
 )
 
+const (
+	claimAccessToken = "access_token"
+	claimIDToken     = "id_token"
+)
+
 func validateSessionCookieMinimal(o *options.Options) []string {
 	if !o.Session.Cookie.Minimal {
 		return []string{}
@@ -20,11 +25,11 @@ func validateSessionCookieMinimal(o *options.Options) []string {
 	for _, header := range append(o.InjectRequestHeaders, o.InjectResponseHeaders...) {
 		for _, value := range header.Values {
 			if value.ClaimSource != nil {
-				if value.ClaimSource.Claim == "access_token" {
+				if value.ClaimSource.Claim == claimAccessToken {
 					msgs = append(msgs,
 						fmt.Sprintf("access_token claim for header %q requires oauth tokens in sessions. session_cookie_minimal cannot be set", header.Name))
 				}
-				if value.ClaimSource.Claim == "id_token" {
+				if value.ClaimSource.Claim == claimIDToken {
 					msgs = append(msgs,
 						fmt.Sprintf("id_token claim for header %q requires oauth tokens in sessions. session_cookie_minimal cannot be set", header.Name))
 				}

@@ -48,10 +48,16 @@ const (
 	// DefaultUseSystemTrustStore is the default value
 	// for Provider.UseSystemTrustStore
 	DefaultUseSystemTrustStore bool = false
+
+	// DefaultAzureTenant is the default tenant for Azure options.
+	DefaultAzureTenant string = "common"
 )
 
+// OIDCAudienceClaim is the default audience claim used by the OIDC provider.
+const OIDCAudienceClaim = "aud"
+
 // OIDCAudienceClaims is the generic audience claim list used by the OIDC provider.
-var OIDCAudienceClaims = []string{"aud"}
+var OIDCAudienceClaims = []string{OIDCAudienceClaim}
 
 // The provider can be selected using the `provider` configuration value, or
 // set in the [`providers` array using
@@ -341,9 +347,9 @@ type LoginGovOptions struct {
 func providerDefaults() Providers {
 	providers := Providers{
 		{
-			Type: "google",
+			Type: GoogleProvider,
 			AzureConfig: AzureOptions{
-				Tenant: "common",
+				Tenant: DefaultAzureTenant,
 			},
 			OIDCConfig: OIDCOptions{
 				InsecureAllowUnverifiedEmail: ptr.To(DefaultInsecureAllowUnverifiedEmail),

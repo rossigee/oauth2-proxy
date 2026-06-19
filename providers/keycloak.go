@@ -18,33 +18,37 @@ type KeycloakProvider struct {
 var _ Provider = (*KeycloakProvider)(nil)
 
 const (
-	keycloakProviderName = "Keycloak"
-	keycloakDefaultScope = "api"
+	keycloakProviderName  = "Keycloak"
+	keycloakDefaultScope  = "api"
+	keycloakAuthorizePath = "/oauth/authorize"
+	keycloakTokenPath     = "/oauth/token" //nolint:gosec
+	keycloakUserinfoPath  = "/api/v3/user"
+	keycloakDefaultHost   = "keycloak.org"
 )
 
 var (
 	// Default Login URL for Keycloak.
 	// Pre-parsed URL of https://keycloak.org/oauth/authorize.
 	keycloakDefaultLoginURL = &url.URL{
-		Scheme: "https",
-		Host:   "keycloak.org",
-		Path:   "/oauth/authorize",
+		Scheme: schemeHTTPS,
+		Host:   keycloakDefaultHost,
+		Path:   keycloakAuthorizePath,
 	}
 
 	// Default Redeem URL for Keycloak.
 	// Pre-parsed URL of ttps://keycloak.org/oauth/token.
 	keycloakDefaultRedeemURL = &url.URL{
-		Scheme: "https",
-		Host:   "keycloak.org",
-		Path:   "/oauth/token",
+		Scheme: schemeHTTPS,
+		Host:   keycloakDefaultHost,
+		Path:   keycloakTokenPath,
 	}
 
 	// Default Validation URL for Keycloak.
 	// Pre-parsed URL of https://keycloak.org/api/v3/user.
 	keycloakDefaultValidateURL = &url.URL{
-		Scheme: "https",
-		Host:   "keycloak.org",
-		Path:   "/api/v3/user",
+		Scheme: schemeHTTPS,
+		Host:   keycloakDefaultHost,
+		Path:   keycloakUserinfoPath,
 	}
 )
 

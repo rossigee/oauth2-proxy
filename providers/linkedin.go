@@ -26,7 +26,7 @@ var (
 	// Default Login URL for LinkedIn.
 	// Pre-parsed URL of https://www.linkedin.com/uas/oauth2/authorization.
 	linkedinDefaultLoginURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "www.linkedin.com",
 		Path:   "/oauth/v2/authorization",
 	}
@@ -34,7 +34,7 @@ var (
 	// Default Redeem URL for LinkedIn.
 	// Pre-parsed URL of https://www.linkedin.com/uas/oauth2/accessToken.
 	linkedinDefaultRedeemURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "www.linkedin.com",
 		Path:   "/uas/oauth2/accessToken",
 	}
@@ -42,14 +42,14 @@ var (
 	// Default Profile URL for LinkedIn.
 	// Pre-parsed URL of https://www.linkedin.com/v1/people/~/email-address.
 	linkedinDefaultProfileURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "api.linkedin.com",
 		Path:   "/v2/emailAddress",
 	}
 
 	// Default Validate URL for LinkedIn.
 	linkedinDefaultValidateURL = &url.URL{
-		Scheme: "https",
+		Scheme: schemeHTTPS,
 		Host:   "api.linkedin.com",
 		Path:   "/v2/me",
 	}

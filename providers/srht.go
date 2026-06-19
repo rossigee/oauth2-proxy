@@ -21,39 +21,41 @@ var _ Provider = (*SourceHutProvider)(nil)
 const (
 	SourceHutProviderName = "SourceHut"
 	SourceHutDefaultScope = "meta.sr.ht/PROFILE:RO"
+	srhtProfilePath       = "/profile"
+	srhtDefaultHost       = "meta.sr.ht"
 )
 
 var (
 	// Default Login URL for SourceHut.
 	// Pre-parsed URL of https://meta.sr.ht/oauth2/authorize.
 	SourceHutDefaultLoginURL = &url.URL{
-		Scheme: "https",
-		Host:   "meta.sr.ht",
+		Scheme: schemeHTTPS,
+		Host:   srhtDefaultHost,
 		Path:   "/oauth2/authorize",
 	}
 
 	// Default Redeem URL for SourceHut.
 	// Pre-parsed URL of https://meta.sr.ht/oauth2/access-token.
 	SourceHutDefaultRedeemURL = &url.URL{
-		Scheme: "https",
-		Host:   "meta.sr.ht",
+		Scheme: schemeHTTPS,
+		Host:   srhtDefaultHost,
 		Path:   "/oauth2/access-token",
 	}
 
 	// Default Profile URL for SourceHut.
 	// Pre-parsed URL of https://meta.sr.ht/query.
 	SourceHutDefaultProfileURL = &url.URL{
-		Scheme: "https",
-		Host:   "meta.sr.ht",
+		Scheme: schemeHTTPS,
+		Host:   srhtDefaultHost,
 		Path:   "/query",
 	}
 
 	// Default Validation URL for SourceHut.
 	// Pre-parsed URL of https://meta.sr.ht/profile.
 	SourceHutDefaultValidateURL = &url.URL{
-		Scheme: "https",
-		Host:   "meta.sr.ht",
-		Path:   "/profile",
+		Scheme: schemeHTTPS,
+		Host:   srhtDefaultHost,
+		Path:   srhtProfilePath,
 	}
 )
 

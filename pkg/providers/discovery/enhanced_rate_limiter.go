@@ -88,6 +88,8 @@ const (
 	PriorityCritical
 )
 
+const limiterTypeDomain = "domain"
+
 func (p RequestPriority) String() string {
 	switch p {
 	case PriorityLow:
@@ -181,7 +183,7 @@ func (rl *EnhancedRateLimiter) CheckRateLimit(req RateLimitRequest) RateLimitRes
 	// Check domain-specific rate limit
 	if req.Domain != "" {
 		if result := rl.checkDomainLimit(req, now); !result.Allowed {
-			rl.metrics.RateLimiterReject("domain", req.Domain, result.Reason)
+			rl.metrics.RateLimiterReject(limiterTypeDomain, req.Domain, result.Reason)
 			return result
 		}
 	}
@@ -258,7 +260,7 @@ func (rl *EnhancedRateLimiter) checkDomainLimit(req RateLimitRequest, now time.T
 		return RateLimitResult{
 			Allowed:    false,
 			Reason:     "domain_rate_limit_exceeded",
-			RetryAfter: rl.calculateRetryAfter("domain"),
+			RetryAfter: rl.calculateRetryAfter(limiterTypeDomain),
 		}
 	}
 
@@ -378,7 +380,7 @@ func (rl *EnhancedRateLimiter) getDomainLimiter(domain string, now time.Time) *l
 	}
 
 	rl.domainLimiters[domain] = entry
-	rl.metrics.RateLimiterBacklog("domain", domain, float64(len(rl.domainLimiters)))
+	rl.metrics.RateLimiterBacklog(limiterTypeDomain, domain, float64(len(rl.domainLimiters)))
 
 	return entry
 }
@@ -478,7 +480,7 @@ func (rl *EnhancedRateLimiter) calculateRetryAfter(limiterType string) time.Dura
 	switch limiterType {
 	case "global":
 		return time.Second / time.Duration(rl.config.GlobalPerSecond)
-	case "domain":
+	case limiterTypeDomain:
 		return time.Minute / time.Duration(rl.config.DomainPerMinute)
 	case "ip":
 		return time.Minute / time.Duration(rl.config.IPPerMinute)
@@ -531,7 +533,7 @@ func (rl *EnhancedRateLimiter) cleanup() {
 	}
 
 	// Update metrics
-	rl.metrics.RateLimiterBacklog("domain", "total", float64(len(rl.domainLimiters)))
+	rl.metrics.RateLimiterBacklog(limiterTypeDomain, "total", float64(len(rl.domainLimiters)))
 	rl.metrics.RateLimiterBacklog("ip", "total", float64(len(rl.ipLimiters)))
 	rl.metrics.RateLimiterBacklog("user", "total", float64(len(rl.userLimiters)))
 }

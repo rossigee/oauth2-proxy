@@ -173,7 +173,7 @@ func NewFlagSet() *pflag.FlagSet {
 
 	// Email-domain discovery flags
 	flagSet.Bool("email-domain-routing", false, "enable email-domain based provider discovery")
-	flagSet.StringSlice("discovery-method", []string{"config", "dns", "wellknown"}, "discovery methods to use in priority order (config, dns, wellknown)")
+	flagSet.StringSlice("discovery-method", []string{methodConfig, methodDNS, methodWellKnown}, "discovery methods to use in priority order (config, dns, wellknown)")
 	flagSet.Bool("dns-discovery", true, "enable DNS TXT record discovery for OIDC providers")
 	flagSet.Bool("wellknown-discovery", true, "enable HTTP well-known discovery for OIDC providers")
 	flagSet.String("fallback-provider", "", "fallback provider ID when email discovery fails")
